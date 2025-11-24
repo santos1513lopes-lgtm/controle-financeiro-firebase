@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Controle Financeiro - Firebase v22 (Filtros Completos)</title>
+  <title>Controle Financeiro - Firebase v23 (Alerta Vencimento)</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -17,23 +17,19 @@
     table { width:100%; border-collapse:collapse; }
     th, td { padding:12px 8px; border-bottom:1px solid #f1f5f9; text-align:left; vertical-align: middle; }
     .muted { color:#6b7280; }
-    
-    /* Botões Gerais */
     .btn { padding:8px 12px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
     .btn.secondary { background:#6b7280; }
-    
-    /* Botões da Tabela */
     .btn-table-edit { background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-right: 4px; }
     .btn-table-del { background-color: #ef4444; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
-    .btn-table-baixa { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; width: 100%; } /* Botão Baixar Verde */
-    
+    .btn-table-baixa { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; width: 100%; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }
     input[type="month"], input, select, textarea { padding:8px; border-radius:6px; border:1px solid #e5e7eb; width: 100%; }
-    
-    /* Cores e Texto */
     .text-green-600 { color: #16a34a !important; font-weight: 700; }
     .text-red-600 { color: #dc2626 !important; font-weight: 700; }
     .truncate-text { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    /* Estilo do Alerta de Vencimento */
+    .badge-vencida { color: #dc2626; font-size: 11px; font-weight: 800; display: block; margin-top: 2px; text-transform: uppercase; letter-spacing: 0.5px; }
   </style>
 </head>
 <body>
@@ -42,7 +38,7 @@
     <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">Finanças Firebase 🔥</h1>
-        <p class="text-sm muted">Sistema de Gestão Financeira v22</p>
+        <p class="text-sm muted">Sistema de Gestão Financeira v23</p>
       </div>
       
       <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
@@ -171,7 +167,7 @@
                     <table style="min-width: 800px;">
                         <thead>
                             <tr>
-                                <th style="width: 100px;">Data</th>
+                                <th style="width: 120px;">Data</th>
                                 <th>Descrição</th>
                                 <th>Categoria</th>
                                 <th>Tipo</th>
@@ -260,7 +256,7 @@ const auth = getAuth(app);
 let currentUser = null;
 let transactions = [];
 
-// DOM
+// DOM Elements
 const appContent = document.getElementById('app-content');
 const loginForm = document.getElementById('login-form');
 const userInfo = document.getElementById('user-info');
@@ -358,7 +354,7 @@ function renderDashboard() {
     const elFut = document.getElementById('previsao-futura'); elFut.textContent = fmt(futura); applyColor(elFut, futura);
 }
 
-// --- TRANSAÇÕES (COM FILTRO) ---
+// --- TRANSAÇÕES ---
 function renderTable() {
     const m = document.getElementById('trans-month').value;
     const tipoFiltro = document.getElementById('trans-type').value;
@@ -403,26 +399,26 @@ function renderTable() {
     document.querySelectorAll('.btn-table-edit').forEach(b => b.onclick = () => openEdit(b.dataset.id));
 }
 
-// Auto-update Transações
 document.getElementById('trans-type').addEventListener('change', renderTable);
 document.getElementById('trans-search').addEventListener('input', renderTable);
 document.getElementById('trans-month').addEventListener('change', renderTable);
 
-// --- FUTURAS (AGORA COM FILTRO IGUAL) ---
+// --- FUTURAS (COM ALERTA VENCIDA) ---
 function renderFuturas(){
     const m = document.getElementById('futuras-month').value;
-    const tipoFiltro = document.getElementById('futuras-type').value; // Novo Filtro
-    const busca = (document.getElementById('futuras-search').value || '').toLowerCase(); // Nova Busca
+    const tipoFiltro = document.getElementById('futuras-type').value;
+    const busca = (document.getElementById('futuras-search').value || '').toLowerCase();
     const tbody = document.getElementById('futuras-tbody');
     tbody.innerHTML = '';
     
+    const hoje = new Date().toISOString().split('T')[0];
+
     const txs = transactions.filter(t => {
         const isPendente = t.status === 'pendente';
         const dataMes = t.date.startsWith(m);
         const matchTipo = tipoFiltro === 'todos' ? true : t.type === tipoFiltro;
         const texto = (t.description + ' ' + t.category).toLowerCase();
         const matchBusca = texto.includes(busca);
-        
         return isPendente && dataMes && matchTipo && matchBusca;
     });
 
@@ -431,8 +427,15 @@ function renderFuturas(){
     txs.forEach(t => {
         const tr = document.createElement('tr');
         const cssClass = t.type === 'entrada' ? 'text-green-600' : 'text-red-600';
+        
+        // Lógica de Vencimento
+        let alertaVencimento = '';
+        if(t.date < hoje) {
+            alertaVencimento = '<span class="badge-vencida">⚠️ VENCIDA</span>';
+        }
+
         tr.innerHTML = `
-            <td class="whitespace-nowrap">${formatDate(t.date)}</td>
+            <td class="whitespace-nowrap">${formatDate(t.date)} ${alertaVencimento}</td>
             <td class="truncate-text" title="${t.description}">${t.description}</td>
             <td>${t.category}</td>
             <td>${t.type === 'entrada' ? 'Receita' : 'Dívida'}</td>
@@ -448,12 +451,10 @@ function renderFuturas(){
     });
 }
 
-// Auto-update Futuras
 document.getElementById('futuras-type').addEventListener('change', renderFuturas);
 document.getElementById('futuras-search').addEventListener('input', renderFuturas);
 document.getElementById('futuras-month').addEventListener('change', renderFuturas);
 
-// --- EXTRATO ---
 function renderExtratoPreview(){
     const m = document.getElementById('extrato-month').value;
     const list = document.getElementById('extrato-list');
@@ -479,18 +480,7 @@ document.getElementById('form').onsubmit = async (e) => {
     const id = document.getElementById('tx-id').value;
     const valStr = document.getElementById('field-valor').value.replace(/\D/g,'');
     const amount = valStr ? Number(valStr)/100 : 0;
-    
-    const data = {
-        user_id: currentUser.uid,
-        amount: amount,
-        type: document.getElementById('field-tipo').value,
-        date: document.getElementById('field-data').value,
-        category: document.getElementById('field-categoria').value,
-        description: document.getElementById('field-desc').value,
-        status: document.getElementById('field-status').value,
-        recurrence: document.getElementById('field-recurrence').value
-    };
-
+    const data = { user_id: currentUser.uid, amount: amount, type: document.getElementById('field-tipo').value, date: document.getElementById('field-data').value, category: document.getElementById('field-categoria').value, description: document.getElementById('field-desc').value, status: document.getElementById('field-status').value, recurrence: document.getElementById('field-recurrence').value };
     try {
         if(id) await updateDoc(doc(db, "transactions", id), data);
         else await addDoc(collection(db, "transactions"), data);
@@ -520,36 +510,20 @@ function openEdit(id){
 
 // --- HELPERS UI ---
 const fVal = document.getElementById('field-valor');
-fVal.addEventListener('input', (e)=>{
-    let v = e.target.value.replace(/\D/g,''); if(!v) return;
-    e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-});
+fVal.addEventListener('input', (e)=>{ let v = e.target.value.replace(/\D/g,''); if(!v) return; e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); });
 
 const fieldRecurrence = document.getElementById('field-recurrence');
 const recurrenceDetails = document.getElementById('recurrence-details');
-fieldRecurrence.onchange = ()=>{
-  if(fieldRecurrence.value !== 'none') recurrenceDetails.classList.remove('hidden');
-  else recurrenceDetails.classList.add('hidden');
-};
+fieldRecurrence.onchange = ()=>{ if(fieldRecurrence.value !== 'none') recurrenceDetails.classList.remove('hidden'); else recurrenceDetails.classList.add('hidden'); };
 
-document.getElementById('fab-add').onclick = () => {
-    document.getElementById('form').reset();
-    document.getElementById('tx-id').value = '';
-    document.getElementById('field-data').value = new Date().toISOString().split('T')[0];
-    document.getElementById('modal').classList.remove('hidden');
-};
+document.getElementById('fab-add').onclick = () => { document.getElementById('form').reset(); document.getElementById('tx-id').value = ''; document.getElementById('field-data').value = new Date().toISOString().split('T')[0]; document.getElementById('modal').classList.remove('hidden'); };
 document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').classList.add('hidden');
-
 document.getElementById('btn-refresh').onclick = initData;
 document.getElementById('btn-refresh-all').onclick = initData;
 document.getElementById('btn-refresh-fut').onclick = initData;
 
-// Datas Iniciais
 const ym = new Date().toISOString().slice(0,7);
-['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => { 
-    const el = document.getElementById(id); 
-    if(el) { el.value = ym; el.onchange = renderAll; } 
-});
+['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => { const el = document.getElementById(id); if(el) { el.value = ym; el.onchange = renderAll; } });
 
 async function initData() { await fetchTransactions(); renderAll(); }
 
