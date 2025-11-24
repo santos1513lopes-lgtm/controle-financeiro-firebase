@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Controle Financeiro - Firebase v39 (Correção Tema)</title>
+  <title>Controle Financeiro - Firebase v40</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -29,25 +29,25 @@
     body { font-family: Inter, system-ui, -apple-system, sans-serif; padding-bottom: 100px; transition: background-color 0.3s; }
     .card { border-radius:12px; padding:16px; box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom:14px; transition: all 0.3s ease; }
     
-    /* Botão Flutuante Corrigido */
+    /* --- LÓGICA DO BOTÃO (+) --- */
     .fab { 
-        position:fixed; 
-        right: 20px; 
-        bottom: 90px; /* Mais alto para não bater no menu mobile */
-        background:#f59e0b; 
-        color:#fff; 
-        width:60px; 
-        height:60px; 
-        border-radius:50%; 
-        display:flex; 
-        align-items:center; 
-        justify-content:center; 
-        font-size:28px; 
-        cursor:pointer; 
+        position:fixed; right: 20px; bottom: 90px; 
+        background:#f59e0b; color:#fff; 
+        width:60px; height:60px; border-radius:50%; 
+        display:flex; align-items:center; justify-content:center; 
+        font-size:28px; cursor:pointer; 
         box-shadow:0 4px 15px rgba(245,158,11,0.4); 
         z-index: 50; 
+        transition: transform 0.2s;
     }
     
+    /* TRUQUE: Esconde o botão APENAS no Mobile QUANDO estiver no Dashboard */
+    @media (max-width: 768px) {
+        body[data-active-tab="dashboard"] .fab {
+            display: none !important;
+        }
+    }
+
     .hidden { display:none !important; }
     table { width:100%; border-collapse:collapse; }
     th, td { padding:12px 8px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align: middle; font-size: 14px; }
@@ -56,8 +56,6 @@
     .btn { padding:8px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
     .btn.secondary { background:#64748b; }
     .btn.danger { background:#ef4444; }
-    
-    /* Botão de Tema */
     .btn-theme-toggle { background: transparent; color: inherit; padding: 8px; border-radius: 50%; border: 1px solid currentColor; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
 
     .truncate-text { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
@@ -74,7 +72,6 @@
 
     .chart-container { position: relative; height: 250px; width: 100%; display: flex; justify-content: center; }
     
-    /* Mobile Nav */
     .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 10px 0; z-index: 50; }
     .dark .mobile-nav { background-color: #1e293b; border-top-color: #334155; }
     .nav-item { display: flex; flex-direction: column; align-items: center; color: #9ca3af; font-size: 10px; background: none; border: none; }
@@ -85,11 +82,11 @@
     @media (min-width: 769px) { 
         .mobile-nav { display: none; } 
         .desktop-nav { display: flex; } 
-        .fab { bottom: 40px; right: 40px; } /* Ajuste PC */
+        .fab { bottom: 40px; right: 40px; } 
     }
   </style>
 </head>
-<body class="bg-gray-50 dark:bg-darkbg text-gray-800 dark:text-gray-100">
+<body class="bg-gray-50 dark:bg-darkbg text-gray-800 dark:text-gray-100" data-active-tab="dashboard">
   <div class="max-w-6xl mx-auto p-4 md:p-6">
     
     <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
@@ -116,8 +113,8 @@
             </div>
         </div>
         <div id="user-actions" class="hidden flex gap-2 w-full md:w-auto justify-end">
-            <button id="btn-refresh-all" class="btn secondary text-xs"><i class="fas fa-sync"></i> Atualizar</button>
-            <button id="btn-wipe-data" class="btn danger text-xs"><i class="fas fa-trash-alt"></i> Zerar</button>
+            <button id="btn-refresh-all" class="btn secondary text-xs flex-1 md:flex-none"><i class="fas fa-sync"></i> Atualizar</button>
+            <button id="btn-wipe-data" class="btn danger text-xs flex-1 md:flex-none"><i class="fas fa-trash-alt"></i> Zerar</button>
             <button id="btn-logout" class="btn secondary text-xs">Sair</button>
         </div>
       </div>
@@ -145,7 +142,7 @@
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div class="card mb-0 border border-gray-100 dark:bg-darkcard dark:border-gray-700"><div class="text-xs text-gray-500 uppercase">A Receber (Previsto)</div><div id="receitas-previstas" class="text-lg font-bold text-green-600">R$ 0,00</div></div>
+                    <div class="card mb-0 border border-gray-100 dark:bg-darkcard dark:border-gray-700"><div class="text-xs text-gray-500 uppercase">Receitas Previstas</div><div id="receitas-previstas" class="text-lg font-bold text-green-600">R$ 0,00</div></div>
                     <div class="card mb-0 border border-gray-100 dark:bg-darkcard dark:border-gray-700"><div class="text-xs text-gray-500 uppercase">Contas a Pagar</div><div id="contas-a-pagar" class="text-lg font-bold text-red-600">R$ 0,00</div></div>
                     <div class="card mb-0 border border-gray-100 dark:bg-darkcard dark:border-gray-700"><div class="text-xs text-gray-500 uppercase">Previsão Futura</div><div id="previsao-futura" class="text-lg font-bold text-gray-600 dark:text-gray-300">R$ 0,00</div></div>
                 </div>
@@ -200,7 +197,6 @@
         </main>
 
         <div class="fab" id="fab-add"><i class="fas fa-plus"></i></div>
-        
         <div class="mobile-nav">
             <button class="nav-item active" data-tab="dashboard"><i class="fas fa-chart-pie"></i>Painel</button>
             <button class="nav-item" data-tab="transacoes"><i class="fas fa-list"></i>Trans.</button>
@@ -222,39 +218,14 @@
                     <div><label class="text-xs text-gray-500 dark:text-gray-400">Tipo</label><select id="field-tipo" class="h-12 font-medium w-full border rounded"><option value="saida">🔴 Despesa</option><option value="entrada">🟢 Receita</option></select></div>
                     <div><label class="text-xs text-gray-500 dark:text-gray-400">Data</label><input id="field-data" type="date" required class="h-12 font-medium w-full border rounded" /></div>
                 </div>
-                
                 <div class="mb-3">
                     <label class="text-xs text-gray-500 dark:text-gray-400">Categoria</label>
                     <select id="field-categoria" class="h-12 w-full border rounded font-medium">
                         <option disabled selected>Selecione...</option>
-                        <optgroup label="🏢 Empresa">
-                            <option value="Reposição de Estoque">📦 Reposição de Estoque</option>
-                            <option value="Marketing">📢 Marketing / Anúncios</option>
-                            <option value="Empréstimo">🏦 Empréstimo</option>
-                            <option value="Pró-labore">💼 Pró-labore</option>
-                            <option value="Impostos">💸 Impostos / MEI</option>
-                            <option value="Logística">🚚 Frete / Logística</option>
-                            <option value="Serviços">🛠️ Serviços Terceirizados</option>
-                            <option value="Vendas">💰 Vendas / Serviços</option>
-                            <option value="Poupança">🐷 Poupança / Reserva</option>
-                            <option value="Investimento">📈 Investimento / Aportes</option>
-                        </optgroup>
-                        <optgroup label="🏠 Pessoal / Geral">
-                            <option value="Alimentação">🍔 Alimentação</option>
-                            <option value="Transporte">🚗 Transporte</option>
-                            <option value="Moradia">🏠 Moradia / Contas</option>
-                            <option value="Saúde">💊 Saúde</option>
-                            <option value="Lazer">🎉 Lazer</option>
-                            <option value="Educação">📚 Educação</option>
-                            <option value="Cartão de Crédito">💳 Cartão de Crédito</option>
-                            <option value="Donativos">🤝 Donativos / Doações</option>
-                            <option value="Poupança">🐷 Poupança</option>
-                            <option value="Investimento">💰 Investimentos</option>
-                            <option value="Outros">🔹 Outros</option>
-                        </optgroup>
+                        <optgroup label="🏢 Empresa"><option value="Reposição de Estoque">📦 Reposição de Estoque</option><option value="Marketing">📢 Marketing / Anúncios</option><option value="Empréstimo">🏦 Empréstimo</option><option value="Pró-labore">💼 Pró-labore</option><option value="Impostos">💸 Impostos / MEI</option><option value="Logística">🚚 Frete / Logística</option><option value="Serviços">🛠️ Serviços Terceirizados</option><option value="Vendas">💰 Vendas / Serviços</option><option value="Poupança">🐷 Poupança / Reserva</option><option value="Investimento">📈 Investimento / Aportes</option></optgroup>
+                        <optgroup label="🏠 Pessoal / Geral"><option value="Alimentação">🍔 Alimentação</option><option value="Transporte">🚗 Transporte</option><option value="Moradia">🏠 Moradia / Contas</option><option value="Saúde">💊 Saúde</option><option value="Lazer">🎉 Lazer</option><option value="Educação">📚 Educação</option><option value="Cartão de Crédito">💳 Cartão de Crédito</option><option value="Donativos">🤝 Donativos / Doações</option><option value="Poupança">🐷 Poupança</option><option value="Investimento">💰 Investimentos</option><option value="Outros">🔹 Outros</option></optgroup>
                     </select>
                 </div>
-
                 <div class="mb-3"><label class="text-xs text-gray-500 dark:text-gray-400">Descrição</label><textarea id="field-desc" placeholder="Detalhes..." rows="2" class="resize-none w-full border rounded"></textarea></div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div><label class="text-xs text-gray-500 dark:text-gray-400">Status</label><select id="field-status" class="h-12 w-full border rounded"><option value="efetivado">✅ Pago</option><option value="pendente">⏳ Pendente</option></select></div>
@@ -318,6 +289,10 @@ onAuthStateChanged(auth, (user) => {
         userDisplay.classList.remove('hidden');
         userEmailEl.textContent = user.email.split('@')[0];
         appContent.classList.remove('hidden');
+        
+        // UPDATE DATA-ATTRIBUTE FOR CSS
+        document.body.setAttribute('data-active-tab', 'dashboard'); 
+        
         initData();
     } else {
         currentUser = null;
@@ -348,6 +323,9 @@ document.getElementById('btn-wipe-data').onclick = async () => {
 
 const sections = { dashboard: document.getElementById('dashboard'), transacoes: document.getElementById('transacoes'), futuras: document.getElementById('futuras'), extrato: document.getElementById('extrato') };
 function switchTab(targetId) {
+    // Update Body Attribute for CSS Logic
+    document.body.setAttribute('data-active-tab', targetId);
+    
     document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.classList.add('secondary'); if(b.dataset.tab === targetId) { b.classList.remove('secondary'); b.classList.add('active'); } });
     document.querySelectorAll('.nav-item').forEach(b => { b.classList.remove('active'); if(b.dataset.tab === targetId) b.classList.add('active'); });
     Object.values(sections).forEach(s => s.classList.add('hidden'));
@@ -489,12 +467,6 @@ document.getElementById('btn-generate-pdf').onclick = () => {
     doc.text('Extrato Financeiro', 14, 20);
     const body = txs.map(r => [formatDate(r.date), r.description, r.category, r.type, fmt(r.amount)]);
     doc.autoTable({ startY: 30, head: [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor']], body: body });
-    const rec = txs.filter(t => t.type === 'entrada').reduce((acc, t) => acc + t.amount, 0);
-    const desp = txs.filter(t => t.type === 'saida').reduce((acc, t) => acc + t.amount, 0);
-    const finalY = doc.lastAutoTable.finalY + 10;
-    doc.text(`Receitas: ${fmt(rec)}`, 14, finalY);
-    doc.text(`Despesas: ${fmt(desp)}`, 14, finalY + 6);
-    doc.text(`Saldo: ${fmt(rec - desp)}`, 14, finalY + 12);
     doc.save('extrato.pdf');
 };
 
@@ -508,21 +480,11 @@ document.getElementById('btn-generate-csv').onclick = () => {
     const a = document.createElement('a'); a.href = url; a.download = 'extrato.csv'; a.click();
 };
 
-// Função para adicionar dias ou meses corretamente
+// PARCELAMENTO
 function addInterval(dateStr, type, count) {
-    const d = new Date(dateStr + 'T12:00:00'); // Força meio-dia para evitar bug de fuso horário
-    
-    if (type === 'monthly') {
-        d.setMonth(d.getMonth() + count);
-    } else if (type === 'weekly') {
-        d.setDate(d.getDate() + (count * 7));
-    } else if (type === 'biweekly') {
-        d.setDate(d.getDate() + (count * 15)); // Padrão quinzenal 15 dias
-    } else if (type === 'custom') {
-        const days = parseInt(document.getElementById('recurrence-days').value) || 30;
-        d.setDate(d.getDate() + (count * days));
-    }
-    
+    const d = new Date(dateStr + 'T12:00:00');
+    if (type === 'monthly') d.setMonth(d.getMonth() + count);
+    else if (type === 'weekly') d.setDate(d.getDate() + (count * 7));
     return d.toISOString().split('T')[0];
 }
 
@@ -549,7 +511,6 @@ document.getElementById('form').onsubmit = async (e) => {
     const amount = valStr ? Number(valStr)/100 : 0;
     if(amount === 0) return alert("Valor zerado");
 
-    // Dados Base
     const type = document.getElementById('field-tipo').value;
     const statusInicial = document.getElementById('field-status').value;
     const baseDate = document.getElementById('field-data').value;
@@ -568,10 +529,8 @@ document.getElementById('form').onsubmit = async (e) => {
         document.getElementById('btn-save').textContent = "Salvando...";
         
         if (id) {
-            // Edição
             await updateDoc(doc(db, "transactions", id), { ...baseData, amount: amount, date: baseDate, status: statusInicial });
         } else {
-            // Novo
             if (recurrence === 'parcel') {
                 const count = parseInt(document.getElementById('recurrence-count').value) || 1;
                 const parcelValue = Math.floor((amount / count) * 100) / 100;
@@ -580,38 +539,20 @@ document.getElementById('form').onsubmit = async (e) => {
                 const batchPromises = [];
                 for (let i = 0; i < count; i++) {
                     const finalValue = (i === count - 1) ? (parcelValue + remainder) : parcelValue;
-                    
-                    // Correção: 1ª parcela segue o status do input, as outras são sempre pendentes
                     const currentStatus = (i === 0) ? statusInicial : 'pendente';
-
-                    const data = {
-                        ...baseData,
-                        amount: Number(finalValue.toFixed(2)),
-                        date: addInterval(baseDate, intervalType, i),
-                        description: `${baseData.description} (${i+1}/${count})`,
-                        status: currentStatus,
-                        recurrence: 'parcel'
-                    };
+                    const data = { ...baseData, amount: Number(finalValue.toFixed(2)), date: addInterval(baseDate, intervalType, i), description: `${baseData.description} (${i+1}/${count})`, status: currentStatus, recurrence: 'parcel' };
                     batchPromises.push(addDoc(collection(db, "transactions"), data));
                 }
                 await Promise.all(batchPromises);
-
             } else if (recurrence === 'fixed_monthly') {
                 const count = parseInt(document.getElementById('recurrence-count').value) || 12;
                 const batchPromises = [];
                 for (let i = 0; i < count; i++) {
                     const currentStatus = (i === 0) ? statusInicial : 'pendente';
-                    const data = {
-                        ...baseData,
-                        amount: amount,
-                        date: addInterval(baseDate, intervalType, i),
-                        status: currentStatus,
-                        recurrence: 'fixed_monthly'
-                    };
+                    const data = { ...baseData, amount: amount, date: addInterval(baseDate, intervalType, i), status: currentStatus, recurrence: 'fixed_monthly' };
                     batchPromises.push(addDoc(collection(db, "transactions"), data));
                 }
                 await Promise.all(batchPromises);
-
             } else {
                 await addDoc(collection(db, "transactions"), { ...baseData, amount: amount, date: baseDate, status: statusInicial, recurrence: 'none' });
             }
