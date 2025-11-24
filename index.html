@@ -3,24 +3,37 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Controle Financeiro - Firebase v38 (Layout Ajustado)</title>
+  <title>Controle Financeiro - Firebase v39 (Correção Tema)</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            darkbg: '#0f172a',
+            darkcard: '#1e293b',
+          }
+        }
+      }
+    }
+  </script>
   
   <style>
-    body { font-family: Inter, system-ui, -apple-system, sans-serif; background:#f8fafc; padding-bottom: 100px; /* Mais espaço no fundo para mobile */ }
-    .card { background:#fff;border-radius:12px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.05);margin-bottom:14px; }
+    body { font-family: Inter, system-ui, -apple-system, sans-serif; padding-bottom: 100px; transition: background-color 0.3s; }
+    .card { border-radius:12px; padding:16px; box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom:14px; transition: all 0.3s ease; }
     
-    /* --- CORREÇÃO DO BOTÃO FLUTUANTE (FAB) --- */
+    /* Botão Flutuante Corrigido */
     .fab { 
         position:fixed; 
-        right: 25px; /* Mais afastado da borda direita */
-        bottom: 90px; /* Mais alto para não bater no menu */
+        right: 20px; 
+        bottom: 90px; /* Mais alto para não bater no menu mobile */
         background:#f59e0b; 
         color:#fff; 
         width:60px; 
@@ -31,57 +44,78 @@
         justify-content:center; 
         font-size:28px; 
         cursor:pointer; 
-        box-shadow:0 6px 20px rgba(245,158,11,0.5); 
-        z-index: 100; /* Garante que fique acima de tudo */
-        transition: transform 0.2s;
+        box-shadow:0 4px 15px rgba(245,158,11,0.4); 
+        z-index: 50; 
     }
-    .fab:active { transform: scale(0.95); }
-
+    
     .hidden { display:none !important; }
     table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px 8px; border-bottom:1px solid #f1f5f9; text-align:left; vertical-align: middle; font-size: 14px; }
+    th, td { padding:12px 8px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align: middle; font-size: 14px; }
+    .dark th, .dark td { border-bottom-color: #334155; }
+    
     .btn { padding:8px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
-    .btn.secondary { background:#6b7280; }
+    .btn.secondary { background:#64748b; }
     .btn.danger { background:#ef4444; }
+    
+    /* Botão de Tema */
+    .btn-theme-toggle { background: transparent; color: inherit; padding: 8px; border-radius: 50%; border: 1px solid currentColor; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
+
     .truncate-text { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-    input, select, textarea { padding:10px; border-radius:8px; border:1px solid #e5e7eb; width: 100%; font-size: 16px; }
+    input, select, textarea { padding:10px; border-radius:8px; border:1px solid #e5e7eb; width: 100%; font-size: 16px; outline: none; transition: all 0.3s ease; }
+    .dark input, .dark select, .dark textarea { background-color: #334155; border-color: #475569; color: #f1f5f9; }
+    
     .text-green-600 { color: #16a34a !important; font-weight: 700; }
     .text-red-600 { color: #dc2626 !important; font-weight: 700; }
+    .dark .text-green-600 { color: #4ade80 !important; }
+    .dark .text-red-600 { color: #f87171 !important; }
+    .dark .muted { color: #94a3b8 !important; }
+    .dark .text-gray-800 { color: #f1f5f9 !important; }
+    .dark .text-gray-500 { color: #cbd5e1 !important; }
+
     .chart-container { position: relative; height: 250px; width: 100%; display: flex; justify-content: center; }
     
-    /* Menu Inferior Mobile */
-    .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 12px 0; z-index: 50; }
+    /* Mobile Nav */
+    .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 10px 0; z-index: 50; }
+    .dark .mobile-nav { background-color: #1e293b; border-top-color: #334155; }
     .nav-item { display: flex; flex-direction: column; align-items: center; color: #9ca3af; font-size: 10px; background: none; border: none; }
     .nav-item.active { color: #f59e0b; font-weight: bold; }
     .nav-item i { font-size: 20px; margin-bottom: 4px; }
-    
-    /* AJUSTES PARA PC (Telas Maiores) */
+
+    @media (max-width: 768px) { .desktop-nav { display: none; } }
     @media (min-width: 769px) { 
         .mobile-nav { display: none; } 
         .desktop-nav { display: flex; } 
-        /* No PC, o botão desce e fica mais no canto, pois não tem menu embaixo */
-        .fab { bottom: 40px; right: 40px; } 
+        .fab { bottom: 40px; right: 40px; } /* Ajuste PC */
     }
-    @media (max-width: 768px) { .desktop-nav { display: none; } }
   </style>
 </head>
-<body>
+<body class="bg-gray-50 dark:bg-darkbg text-gray-800 dark:text-gray-100">
   <div class="max-w-6xl mx-auto p-4 md:p-6">
+    
     <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
-      <div class="text-center md:text-left w-full">
-        <h1 class="text-2xl font-bold text-gray-800">Finanças <span class="text-yellow-500">🔥</span></h1>
-        <div id="user-email" class="text-xs text-gray-500 font-mono">Carregando...</div>
+      <div class="flex flex-row justify-between items-center w-full md:w-auto gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Finanças <span class="text-yellow-500">🔥</span></h1>
+          <div id="user-display" class="hidden flex items-center gap-3 mt-1">
+             <span id="user-email" class="text-xs text-gray-500 dark:text-gray-400 font-mono">Carregando...</span>
+             <button id="btn-theme" class="btn-theme-toggle text-gray-500 dark:text-gray-300 hover:text-yellow-500" title="Mudar Tema">
+                 <i class="fas fa-moon"></i>
+             </button>
+          </div>
+        </div>
       </div>
+
       <div id="auth-area" class="w-full md:w-auto">
-        <div id="login-form" class="card p-4">
+        <div id="login-form" class="card bg-white dark:bg-darkcard p-4 mb-0">
             <div class="flex flex-col gap-2">
-                <input id="email" placeholder="E-mail" class="p-2 border rounded w-full" />
-                <input id="password" type="password" placeholder="Senha" class="p-2 border rounded w-full" />
-                <div class="flex gap-2"><button id="btn-login" class="btn w-full">Entrar</button><button id="btn-signup" class="btn secondary w-full">Criar</button></div>
+                <input id="email" placeholder="E-mail" class="p-2 border rounded w-full mb-0" />
+                <input id="password" type="password" placeholder="Senha" class="p-2 border rounded w-full mb-0" />
+                <div class="flex gap-2"><button id="btn-login" class="btn w-full">Entrar</button></div>
                 <div id="auth-msg" class="text-xs text-center text-red-500"></div>
+                <div class="text-xs text-center text-gray-400 mt-1">Acesso restrito.</div>
             </div>
         </div>
-        <div id="user-actions" class="hidden flex gap-2 justify-center">
+        <div id="user-actions" class="hidden flex gap-2 w-full md:w-auto justify-end">
             <button id="btn-refresh-all" class="btn secondary text-xs"><i class="fas fa-sync"></i> Atualizar</button>
             <button id="btn-wipe-data" class="btn danger text-xs"><i class="fas fa-trash-alt"></i> Zerar</button>
             <button id="btn-logout" class="btn secondary text-xs">Sair</button>
@@ -98,64 +132,58 @@
 
     <div id="app-content" class="hidden">
         <main>
-            <section id="dashboard" class="card">
+            <section id="dashboard" class="card bg-white dark:bg-darkcard">
                 <div class="flex items-center gap-3 mb-4">
-                    <label class="text-sm text-gray-500">Mês:</label>
+                    <label class="text-sm text-gray-500 dark:text-gray-400">Mês:</label>
                     <input id="dash-month" type="month" class="border p-2 rounded bg-gray-50 font-bold text-gray-700" />
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div class="card bg-green-50 border border-green-100 mb-0"><div class="text-xs text-green-600 uppercase">Receitas</div><div id="total-receitas-mes" class="text-xl font-bold text-green-700">R$ 0,00</div></div>
-                    <div class="card bg-red-50 border border-red-100 mb-0"><div class="text-xs text-red-600 uppercase">Despesas</div><div id="total-despesas-mes" class="text-xl font-bold text-red-700">R$ 0,00</div></div>
-                    <div class="card bg-blue-50 border border-blue-100 mb-0"><div class="text-xs text-blue-600 uppercase">Saldo Líquido</div><div id="saldo-mes" class="text-xl font-bold text-blue-700">R$ 0,00</div></div>
+                    <div class="card bg-green-50 border border-green-100 dark:bg-green-900/20 dark:border-green-900 mb-0"><div class="text-xs text-green-600 uppercase">Receitas</div><div id="total-receitas-mes" class="text-xl font-bold text-green-700 dark:text-green-400">R$ 0,00</div></div>
+                    <div class="card bg-red-50 border border-red-100 dark:bg-red-900/20 dark:border-red-900 mb-0"><div class="text-xs text-red-600 uppercase">Despesas</div><div id="total-despesas-mes" class="text-xl font-bold text-red-700 dark:text-red-400">R$ 0,00</div></div>
+                    <div class="card bg-blue-50 border border-blue-100 dark:bg-blue-900/20 dark:border-blue-900 mb-0"><div class="text-xs text-blue-600 uppercase">Saldo Líquido</div><div id="saldo-mes" class="text-xl font-bold text-blue-700 dark:text-blue-400">R$ 0,00</div></div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
-                    <div class="card mb-0 border border-gray-100"><div class="text-xs text-gray-500 uppercase">A Receber (Previsto)</div><div id="receitas-previstas" class="text-lg font-bold text-green-600">R$ 0,00</div></div>
-                    <div class="card mb-0 border border-gray-100"><div class="text-xs text-gray-500 uppercase">Contas a Pagar</div><div id="contas-a-pagar" class="text-lg font-bold text-red-600">R$ 0,00</div></div>
-                    <div class="card mb-0 border border-gray-100"><div class="text-xs text-gray-500 uppercase">Previsão Futura</div><div id="previsao-futura" class="text-lg font-bold text-gray-600">R$ 0,00</div></div>
+                    <div class="card mb-0 border border-gray-100 dark:bg-darkcard dark:border-gray-700"><div class="text-xs text-gray-500 uppercase">A Receber (Previsto)</div><div id="receitas-previstas" class="text-lg font-bold text-green-600">R$ 0,00</div></div>
+                    <div class="card mb-0 border border-gray-100 dark:bg-darkcard dark:border-gray-700"><div class="text-xs text-gray-500 uppercase">Contas a Pagar</div><div id="contas-a-pagar" class="text-lg font-bold text-red-600">R$ 0,00</div></div>
+                    <div class="card mb-0 border border-gray-100 dark:bg-darkcard dark:border-gray-700"><div class="text-xs text-gray-500 uppercase">Previsão Futura</div><div id="previsao-futura" class="text-lg font-bold text-gray-600 dark:text-gray-300">R$ 0,00</div></div>
                 </div>
 
-                <div class="card border border-gray-100">
+                <div class="card border border-gray-100 dark:bg-darkcard dark:border-gray-700">
                     <div class="text-xs font-bold text-gray-500 uppercase mb-2">Despesas por Categoria</div>
                     <div class="chart-container"><canvas id="expenseChart"></canvas></div>
                     <div id="chart-legend" class="text-center text-xs text-gray-400 mt-2">Selecione um mês com despesas</div>
                 </div>
             </section>
 
-            <section id="transacoes" class="card hidden">
+            <section id="transacoes" class="card hidden bg-white dark:bg-darkcard">
                 <div class="flex flex-col gap-3 mb-4">
-                    <div class="flex gap-2">
-                        <input id="trans-month" type="month" class="flex-1 p-2 border rounded" />
-                        <select id="trans-type" class="w-1/3 p-2 border rounded"><option value="todos">Todos</option><option value="entrada">Ent</option><option value="saida">Sai</option></select>
-                    </div>
+                    <div class="flex gap-2"><input id="trans-month" type="month" class="flex-1 p-2 border rounded" /><select id="trans-type" class="w-1/3 p-2 border rounded"><option value="todos">Todos</option><option value="entrada">Ent</option><option value="saida">Sai</option></select></div>
                     <input id="trans-search" placeholder="Buscar por nome..." class="p-2 border rounded w-full" />
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead><tr class="text-xs text-gray-500 uppercase bg-gray-50"><th class="w-12">Dia</th><th>Desc</th><th class="text-right">Valor</th><th class="text-center w-16">Ação</th></tr></thead>
+                        <thead><tr class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700"><th class="w-12">Dia</th><th>Desc</th><th class="text-right">Valor</th><th class="text-center w-16">Ação</th></tr></thead>
                         <tbody id="trans-tbody"><tr><td colspan="4" class="text-center py-4 text-gray-400">Carregando...</td></tr></tbody>
                     </table>
                 </div>
             </section>
 
-            <section id="futuras" class="card hidden">
+            <section id="futuras" class="card hidden bg-white dark:bg-darkcard">
                 <div class="flex flex-col gap-3 mb-4">
-                    <div class="flex gap-2">
-                        <input id="futuras-month" type="month" class="flex-1 p-2 border rounded" />
-                        <select id="futuras-type" class="w-1/3 p-2 border rounded"><option value="todos">Todos</option><option value="entrada">Ent</option><option value="saida">Sai</option></select>
-                    </div>
+                    <div class="flex gap-2"><input id="futuras-month" type="month" class="flex-1 p-2 border rounded" /><select id="futuras-type" class="w-1/3 p-2 border rounded"><option value="todos">Todos</option><option value="entrada">Ent</option><option value="saida">Sai</option></select></div>
                     <input id="futuras-search" placeholder="Buscar conta..." class="p-2 border rounded w-full" />
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full">
-                        <thead><tr class="text-xs text-gray-500 uppercase bg-gray-50"><th class="w-12">Dia</th><th>Desc</th><th class="text-right">Valor</th><th class="text-center w-16">Ação</th></tr></thead>
+                        <thead><tr class="text-xs text-gray-500 dark:text-gray-400 uppercase bg-gray-50 dark:bg-gray-700"><th class="w-12">Dia</th><th>Desc</th><th class="text-right">Valor</th><th class="text-center w-16">Ação</th></tr></thead>
                         <tbody id="futuras-tbody"><tr><td colspan="4" class="text-center py-4 text-gray-400">Sem dados</td></tr></tbody>
                     </table>
                 </div>
             </section>
 
-            <section id="extrato" class="card hidden">
+            <section id="extrato" class="card hidden bg-white dark:bg-darkcard">
                 <div class="flex flex-col gap-4 mb-4">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                         <div><label class="text-xs text-gray-500">Mês</label><input id="extrato-month" type="month" /></div>
@@ -167,7 +195,7 @@
                         <button id="btn-generate-csv" class="btn secondary flex-1 text-center"><i class="fas fa-file-csv"></i> Baixar CSV</button>
                     </div>
                 </div>
-                <div id="extrato-preview" class="card overflow-x-auto bg-gray-50"><div class="text-xs font-bold uppercase text-gray-500 mb-2 border-b pb-1">Pré-visualização</div><div id="extrato-list">Selecione os filtros</div></div>
+                <div id="extrato-preview" class="card overflow-x-auto bg-gray-50 dark:bg-gray-800"><div class="text-xs font-bold uppercase text-gray-500 mb-2 border-b dark:border-gray-600 pb-1">Pré-visualização</div><div id="extrato-list">Selecione os filtros</div></div>
             </section>
         </main>
 
@@ -182,28 +210,28 @@
     </div>
 
     <div id="modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-        <div class="bg-white w-full md:max-w-lg md:rounded-lg rounded-t-3xl p-6 animate-slide-up shadow-2xl h-[85vh] md:h-auto overflow-y-auto">
+        <div class="bg-white dark:bg-gray-800 w-full md:max-w-lg md:rounded-lg rounded-t-3xl p-6 animate-slide-up shadow-2xl h-[85vh] md:h-auto overflow-y-auto">
             <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-gray-800">Lançamento</h3>
+                <h3 class="text-lg font-bold text-gray-800 dark:text-white">Lançamento</h3>
                 <button id="btn-cancel" class="text-gray-400 text-2xl">&times;</button>
             </div>
             <form id="form">
                 <input type="hidden" id="tx-id" />
-                <div class="mb-4"><label class="text-xs text-gray-500 uppercase font-bold ml-1">Valor</label><input id="field-valor" required placeholder="R$ 0,00" class="text-3xl font-bold text-center text-gray-800 border-b-2 border-t-0 border-x-0 rounded-none focus:ring-0 px-0 w-full" inputmode="numeric" /></div>
+                <div class="mb-4"><label class="text-xs text-gray-500 dark:text-gray-400 uppercase font-bold ml-1">Valor</label><input id="field-valor" required placeholder="R$ 0,00" class="text-3xl font-bold text-center text-gray-800 dark:text-white border-b-2 border-t-0 border-x-0 rounded-none focus:ring-0 px-0 w-full" inputmode="numeric" /></div>
                 <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div><label class="text-xs text-gray-500">Tipo</label><select id="field-tipo" class="h-12 font-medium w-full border rounded"><option value="saida">🔴 Despesa</option><option value="entrada">🟢 Receita</option></select></div>
-                    <div><label class="text-xs text-gray-500">Data</label><input id="field-data" type="date" required class="h-12 font-medium w-full border rounded" /></div>
+                    <div><label class="text-xs text-gray-500 dark:text-gray-400">Tipo</label><select id="field-tipo" class="h-12 font-medium w-full border rounded"><option value="saida">🔴 Despesa</option><option value="entrada">🟢 Receita</option></select></div>
+                    <div><label class="text-xs text-gray-500 dark:text-gray-400">Data</label><input id="field-data" type="date" required class="h-12 font-medium w-full border rounded" /></div>
                 </div>
                 
                 <div class="mb-3">
-                    <label class="text-xs text-gray-500">Categoria</label>
+                    <label class="text-xs text-gray-500 dark:text-gray-400">Categoria</label>
                     <select id="field-categoria" class="h-12 w-full border rounded font-medium">
                         <option disabled selected>Selecione...</option>
                         <optgroup label="🏢 Empresa">
                             <option value="Reposição de Estoque">📦 Reposição de Estoque</option>
                             <option value="Marketing">📢 Marketing / Anúncios</option>
                             <option value="Empréstimo">🏦 Empréstimo</option>
-                            <option value="Pró-labore">💼 Pró-labore (Salário)</option>
+                            <option value="Pró-labore">💼 Pró-labore</option>
                             <option value="Impostos">💸 Impostos / MEI</option>
                             <option value="Logística">🚚 Frete / Logística</option>
                             <option value="Serviços">🛠️ Serviços Terceirizados</option>
@@ -227,12 +255,12 @@
                     </select>
                 </div>
 
-                <div class="mb-3"><label class="text-xs text-gray-500">Descrição</label><textarea id="field-desc" placeholder="Detalhes..." rows="2" class="resize-none w-full border rounded"></textarea></div>
+                <div class="mb-3"><label class="text-xs text-gray-500 dark:text-gray-400">Descrição</label><textarea id="field-desc" placeholder="Detalhes..." rows="2" class="resize-none w-full border rounded"></textarea></div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
-                    <div><label class="text-xs text-gray-500">Status</label><select id="field-status" class="h-12 w-full border rounded"><option value="efetivado">✅ Pago</option><option value="pendente">⏳ Pendente</option></select></div>
-                    <div><label class="text-xs text-gray-500">Repetir?</label><select id="field-recurrence" class="h-12 w-full border rounded"><option value="none">Não</option><option value="parcel">Parcelar</option><option value="fixed_monthly">Mensal</option></select></div>
+                    <div><label class="text-xs text-gray-500 dark:text-gray-400">Status</label><select id="field-status" class="h-12 w-full border rounded"><option value="efetivado">✅ Pago</option><option value="pendente">⏳ Pendente</option></select></div>
+                    <div><label class="text-xs text-gray-500 dark:text-gray-400">Repetir?</label><select id="field-recurrence" class="h-12 w-full border rounded"><option value="none">Não</option><option value="parcel">Parcelar</option><option value="fixed_monthly">Mensal</option></select></div>
                 </div>
-                <div id="recurrence-details" class="hidden bg-blue-50 p-3 rounded mb-4">
+                <div id="recurrence-details" class="hidden bg-blue-50 dark:bg-blue-900 p-3 rounded mb-4">
                     <div class="grid grid-cols-2 gap-2">
                         <input id="recurrence-count" type="number" min="2" placeholder="Qtd" class="w-full border rounded" />
                         <select id="recurrence-interval" class="w-full border rounded"><option value="monthly">Mensal</option><option value="weekly">Semanal</option></select>
@@ -247,7 +275,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC5aGRF1qU1rhfi7jHZywy5NNaPr6lJfvo",
@@ -266,9 +294,19 @@ let currentUser = null;
 let transactions = [];
 let chartInstance = null;
 
+const btnTheme = document.getElementById('btn-theme');
+const htmlEl = document.documentElement;
+if (localStorage.getItem('theme') === 'dark') { htmlEl.classList.add('dark'); btnTheme.innerHTML = '<i class="fas fa-sun"></i>'; }
+btnTheme.onclick = () => {
+    if (htmlEl.classList.contains('dark')) { htmlEl.classList.remove('dark'); localStorage.setItem('theme', 'light'); btnTheme.innerHTML = '<i class="fas fa-moon"></i>'; } 
+    else { htmlEl.classList.add('dark'); localStorage.setItem('theme', 'dark'); btnTheme.innerHTML = '<i class="fas fa-sun"></i>'; }
+    renderAll(); 
+};
+
 const loginForm = document.getElementById('login-form');
 const userActions = document.getElementById('user-actions');
 const appContent = document.getElementById('app-content');
+const userDisplay = document.getElementById('user-display');
 const userEmailEl = document.getElementById('user-email');
 const authMsg = document.getElementById('auth-msg');
 
@@ -277,6 +315,7 @@ onAuthStateChanged(auth, (user) => {
         currentUser = user;
         loginForm.classList.add('hidden');
         userActions.classList.remove('hidden');
+        userDisplay.classList.remove('hidden');
         userEmailEl.textContent = user.email.split('@')[0];
         appContent.classList.remove('hidden');
         initData();
@@ -284,13 +323,13 @@ onAuthStateChanged(auth, (user) => {
         currentUser = null;
         loginForm.classList.remove('hidden');
         userActions.classList.add('hidden');
-        userEmailEl.textContent = "Faça login";
+        userDisplay.classList.add('hidden');
+        userEmailEl.textContent = "";
         appContent.classList.add('hidden');
     }
 });
 
 document.getElementById('btn-login').onclick = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } catch (e) { authMsg.textContent = "Erro: " + e.message; } };
-document.getElementById('btn-signup').onclick = async () => { try { await createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); alert("Conta criada!"); } catch (e) { authMsg.textContent = "Erro: " + e.message; } };
 document.getElementById('btn-logout').onclick = async () => { await signOut(auth); window.location.reload(); };
 
 document.getElementById('btn-wipe-data').onclick = async () => {
@@ -345,11 +384,12 @@ function renderChart(txs) {
     expenses.forEach(t => { const cat = t.category || 'Outros'; categories[cat] = (categories[cat] || 0) + t.amount; });
     const labels = Object.keys(categories);
     const data = Object.values(categories);
+    const textColor = htmlEl.classList.contains('dark') ? '#cbd5e1' : '#666';
     if(chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
         type: 'doughnut',
         data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'], borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }, tooltip: { callbacks: { label: function(context) { return ' ' + context.label + ': ' + fmt(context.raw); } } } }, cutout: '70%' }
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12, font: { size: 10 } } }, tooltip: { callbacks: { label: function(context) { return ' ' + context.label + ': ' + fmt(context.raw); } } } }, cutout: '70%' }
     });
 }
 
@@ -388,7 +428,7 @@ function renderTable() {
         const tr = document.createElement('tr');
         const cssClass = t.type === 'entrada' ? 'text-green-600' : 'text-red-600';
         const sign = t.type === 'entrada' ? '+' : '-';
-        tr.innerHTML = `<td><div class="font-bold text-gray-600 text-xs">${t.date.split('-')[2]}</div></td><td><div class="truncate-text font-medium text-sm text-gray-800">${t.description}</div><div class="text-xs text-gray-400">${t.category}</div></td><td class="text-right font-bold text-sm ${cssClass}">${sign}${fmt(t.amount)}</td><td class="text-right"><div class="flex justify-end gap-1"><button class="text-blue-500 p-2" onclick="window.editTx('${t.id}')"><i class="fas fa-edit"></i></button><button class="text-red-500 p-2" onclick="window.delTx('${t.id}')"><i class="fas fa-trash"></i></button></div></td>`;
+        tr.innerHTML = `<td><div class="font-bold text-gray-600 dark:text-gray-300 text-xs">${t.date.split('-')[2]}</div></td><td><div class="truncate-text font-medium text-sm text-gray-800 dark:text-white">${t.description}</div><div class="text-xs text-gray-400">${t.category}</div></td><td class="text-right font-bold text-sm ${cssClass}">${sign}${fmt(t.amount)}</td><td class="text-right"><div class="flex justify-end gap-1"><button class="text-blue-500 p-2" onclick="window.editTx('${t.id}')"><i class="fas fa-edit"></i></button><button class="text-red-500 p-2" onclick="window.delTx('${t.id}')"><i class="fas fa-trash"></i></button></div></td>`;
         tbody.appendChild(tr);
     });
 }
@@ -414,7 +454,7 @@ function renderFuturas(){
         const tr = document.createElement('tr');
         const cssClass = t.type === 'entrada' ? 'text-green-600' : 'text-red-600';
         let alerta = t.date < hoje ? '<span class="text-red-600 text-[10px] font-bold block">VENCIDA</span>' : '';
-        tr.innerHTML = `<td><div class="font-bold text-gray-600 text-xs">${t.date.split('-')[2]}</div>${alerta}</td><td><div class="truncate-text font-medium text-sm">${t.description}</div></td><td class="text-right font-bold text-sm ${cssClass}">${fmt(t.amount)}</td><td class="text-center"><button class="bg-green-100 text-green-600 rounded px-2 py-1 text-xs font-bold" onclick="window.baixaTx('${t.id}')">✔</button></td>`;
+        tr.innerHTML = `<td><div class="font-bold text-gray-600 dark:text-gray-300 text-xs">${t.date.split('-')[2]}</div>${alerta}</td><td><div class="truncate-text font-medium text-sm">${t.description}</div></td><td class="text-right font-bold text-sm ${cssClass}">${fmt(t.amount)}</td><td class="text-center"><button class="bg-green-100 text-green-600 rounded px-2 py-1 text-xs font-bold" onclick="window.baixaTx('${t.id}')">✔</button></td>`;
         tbody.appendChild(tr);
     });
 }
@@ -431,7 +471,7 @@ function renderExtratoPreview(){
     const txs = getExtratoData();
     const list = document.getElementById('extrato-list');
     if(txs.length === 0) { list.innerHTML = 'Sem dados.'; return; }
-    let h = '<table class="w-full"><thead><tr class="text-xs uppercase text-gray-500"><th>Data</th><th>Desc</th><th class="text-right">Valor</th><th>Status</th></tr></thead><tbody>';
+    let h = '<table class="w-full"><thead><tr class="text-xs uppercase text-gray-500 dark:text-gray-400"><th>Data</th><th>Desc</th><th class="text-right">Valor</th><th>Status</th></tr></thead><tbody>';
     txs.forEach(t=>{
         const cssClass = t.type === 'entrada' ? 'text-green-600' : 'text-red-600';
         h += `<tr><td>${formatDate(t.date)}</td><td>${t.description}</td><td class="text-right font-bold ${cssClass}">${fmt(t.amount)}</td><td>${t.status}</td></tr>`;
@@ -468,6 +508,24 @@ document.getElementById('btn-generate-csv').onclick = () => {
     const a = document.createElement('a'); a.href = url; a.download = 'extrato.csv'; a.click();
 };
 
+// Função para adicionar dias ou meses corretamente
+function addInterval(dateStr, type, count) {
+    const d = new Date(dateStr + 'T12:00:00'); // Força meio-dia para evitar bug de fuso horário
+    
+    if (type === 'monthly') {
+        d.setMonth(d.getMonth() + count);
+    } else if (type === 'weekly') {
+        d.setDate(d.getDate() + (count * 7));
+    } else if (type === 'biweekly') {
+        d.setDate(d.getDate() + (count * 15)); // Padrão quinzenal 15 dias
+    } else if (type === 'custom') {
+        const days = parseInt(document.getElementById('recurrence-days').value) || 30;
+        d.setDate(d.getDate() + (count * days));
+    }
+    
+    return d.toISOString().split('T')[0];
+}
+
 window.editTx = (id) => {
     const t = transactions.find(x=>x.id===id); if(!t) return;
     document.getElementById('tx-id').value = id;
@@ -481,14 +539,6 @@ window.editTx = (id) => {
 };
 window.delTx = async (id) => { if(confirm("Apagar?")) { await deleteDoc(doc(db, "transactions", id)); await fetchTransactions(); renderAll(); } };
 window.baixaTx = async (id) => { if(confirm("Baixar?")) { await updateDoc(doc(db, "transactions", id), { status: 'efetivado' }); await fetchTransactions(); renderAll(); } };
-
-// CORREÇÃO DA LÓGICA DE PARCELAMENTO
-function addInterval(dateStr, type, count) {
-    const d = new Date(dateStr + 'T12:00:00'); // Fix Fuso Horário
-    if (type === 'monthly') d.setMonth(d.getMonth() + count);
-    else if (type === 'weekly') d.setDate(d.getDate() + (count * 7));
-    return d.toISOString().split('T')[0];
-}
 
 document.getElementById('form').onsubmit = async (e) => {
     e.preventDefault();
