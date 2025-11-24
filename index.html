@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Controle Financeiro - Firebase v20 (Busca Corrigida)</title>
+  <title>Controle Financeiro - Firebase v21 (Visual Final)</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -15,16 +15,28 @@
     .fab { position:fixed; right:28px; bottom:28px; background:#f59e0b; color:#fff; width:56px; height:56px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; box-shadow:0 8px 24px rgba(245,158,11,0.3); z-index: 50; }
     .hidden { display:none; }
     table { width:100%; border-collapse:collapse; }
-    th, td { padding:12px; border-bottom:1px solid #f1f5f9; text-align:left; }
+    th, td { padding:12px 8px; border-bottom:1px solid #f1f5f9; text-align:left; vertical-align: middle; }
     .muted { color:#6b7280; }
-    .btn { padding:8px 12px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; }
+    
+    /* Botões Gerais */
+    .btn { padding:8px 12px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
     .btn.secondary { background:#6b7280; }
+    
+    /* Botões da Tabela (Pequenos e Coloridos) */
+    .btn-table-edit { background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-right: 4px; }
+    .btn-table-del { background-color: #ef4444; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
+    .btn-table-edit:hover { background-color: #2563eb; }
+    .btn-table-del:hover { background-color: #dc2626; }
+
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }
     input[type="month"], input, select, textarea { padding:8px; border-radius:6px; border:1px solid #e5e7eb; width: 100%; }
     
     /* Cores */
     .text-green-600 { color: #16a34a !important; font-weight: 700; }
     .text-red-600 { color: #dc2626 !important; font-weight: 700; }
+    
+    /* Utilitário para cortar texto longo */
+    .truncate-text { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   </style>
 </head>
 <body>
@@ -33,7 +45,7 @@
     <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">Finanças Firebase 🔥</h1>
-        <p class="text-sm muted">Sistema de Gestão Financeira v20</p>
+        <p class="text-sm muted">Sistema de Gestão Financeira v21</p>
       </div>
       
       <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
@@ -119,8 +131,17 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table>
-                        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th class="text-right">Valor</th><th>Status</th><th>Ações</th></tr></thead>
+                    <table style="min-width: 800px;"> <thead>
+                            <tr>
+                                <th style="width: 100px;">Data</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Tipo</th>
+                                <th class="text-right">Valor</th>
+                                <th>Status</th>
+                                <th class="text-right" style="width: 160px;">Ações</th>
+                            </tr>
+                        </thead>
                         <tbody id="trans-tbody"><tr><td colspan="7" class="text-center muted py-8">Carregando...</td></tr></tbody>
                     </table>
                 </div>
@@ -207,6 +228,7 @@ const firebaseConfig = {
   appId: "1:28738888590:web:ddfca08150f981fb163adf"
 };
 
+// INIT
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
@@ -214,7 +236,7 @@ const auth = getAuth(app);
 let currentUser = null;
 let transactions = [];
 
-// DOM
+// DOM Elements
 const appContent = document.getElementById('app-content');
 const loginForm = document.getElementById('login-form');
 const userInfo = document.getElementById('user-info');
@@ -311,26 +333,19 @@ function renderDashboard() {
     const elFut = document.getElementById('previsao-futura'); elFut.textContent = fmt(futura); applyColor(elFut, futura);
 }
 
-// 🚀 FUNÇÃO DE TABELA CORRIGIDA E AUTOMATIZADA 🚀
 function renderTable() {
     const m = document.getElementById('trans-month').value;
-    const tipoFiltro = document.getElementById('trans-type').value; // Pega o valor do Select
-    const busca = (document.getElementById('trans-search').value || '').toLowerCase(); // Pega o texto da busca
-
+    const tipoFiltro = document.getElementById('trans-type').value;
+    const busca = (document.getElementById('trans-search').value || '').toLowerCase();
     const tbody = document.getElementById('trans-tbody');
     tbody.innerHTML = '';
     
-    // Filtro Principal
+    // FILTRAGEM CORRIGIDA
     const txs = transactions.filter(t => {
-        const dataMes = t.date.startsWith(m); // Filtra Mês
-        
-        // Filtra Tipo (Se for 'todos', retorna true, senão compara)
+        const dataMes = t.date.startsWith(m);
         const matchTipo = tipoFiltro === 'todos' ? true : t.type === tipoFiltro;
-        
-        // Filtra Texto (Descrição ou Categoria)
         const texto = (t.description + ' ' + t.category).toLowerCase();
         const matchBusca = texto.includes(busca);
-
         return dataMes && matchTipo && matchBusca;
     });
     
@@ -342,19 +357,32 @@ function renderTable() {
         const colorClass = isRec ? 'text-green-600' : 'text-red-600';
         const sign = isRec ? '+' : '-';
         
-        tr.innerHTML = `<td>${formatDate(t.date)}</td><td>${t.description}</td><td>${t.category}</td><td>${isRec?'Receita':'Dívida'}</td><td class="text-right font-bold ${colorClass}">${sign} ${fmt(t.amount)}</td><td>${t.status}</td><td><button class="btn-edit btn" data-id="${t.id}">Edit</button> <button class="btn-del btn secondary" data-id="${t.id}">X</button></td>`;
+        // LAYOUT ARRUMADO: Descrição cortada e Botões lado a lado
+        tr.innerHTML = `
+            <td class="whitespace-nowrap">${formatDate(t.date)}</td>
+            <td class="truncate-text" title="${t.description}">${t.description}</td>
+            <td>${t.category}</td>
+            <td>${isRec?'Receita':'Dívida'}</td>
+            <td class="text-right font-bold ${colorClass}">${sign} ${fmt(t.amount)}</td>
+            <td>${t.status}</td>
+            <td class="text-right">
+                <div class="flex justify-end gap-1">
+                    <button class="btn-table-edit" data-id="${t.id}">Editar</button>
+                    <button class="btn-table-del" data-id="${t.id}">Excluir</button>
+                </div>
+            </td>
+        `;
         tbody.appendChild(tr);
     });
     
-    document.querySelectorAll('.btn-del').forEach(b => b.onclick = () => deleteTx(b.dataset.id));
-    document.querySelectorAll('.btn-edit').forEach(b => b.onclick = () => openEdit(b.dataset.id));
+    document.querySelectorAll('.btn-table-del').forEach(b => b.onclick = () => deleteTx(b.dataset.id));
+    document.querySelectorAll('.btn-table-edit').forEach(b => b.onclick = () => openEdit(b.dataset.id));
 }
 
 // EVENT LISTENERS PARA BUSCA AUTOMÁTICA
 document.getElementById('trans-type').addEventListener('change', renderTable);
 document.getElementById('trans-search').addEventListener('input', renderTable);
 document.getElementById('trans-month').addEventListener('change', renderTable);
-
 
 function renderFuturas(){
     const m = document.getElementById('futuras-month').value;
