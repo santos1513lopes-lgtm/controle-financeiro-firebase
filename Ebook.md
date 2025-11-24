@@ -1,6 +1,6 @@
 # 🚀 Do Zero ao App: Criando um Sistema Financeiro Serverless
 
-**Autor:** [Seu Nome Aqui]  
+**Autor:** [Josué Lopes]  
 **Versão do Projeto:** v19 (Mobile/Firebase)  
 **Tecnologias:** HTML5, TailwindCSS, JavaScript (ES6), Google Firebase.
 
