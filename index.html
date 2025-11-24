@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Controle Financeiro - Firebase v14</title>
+  <title>Controle Financeiro - Firebase v15</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -14,19 +14,23 @@
     .card { background:#fff;border-radius:10px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.05);margin-bottom:14px; }
     .fab { position:fixed; right:20px; bottom:20px; background:#f59e0b; color:#fff; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px; cursor:pointer; box-shadow:0 4px 15px rgba(245,158,11,0.3); z-index: 50; transition: transform 0.1s; }
     .fab:active { transform: scale(0.95); }
-    .hidden { display:none; }
+    .hidden { display:none !important; } /* Força o hidden */
     table { width:100%; border-collapse:collapse; min-width: 600px; }
     th, td { padding:12px 8px; border-bottom:1px solid #f1f5f9; text-align:left; font-size: 14px; }
     .muted { color:#6b7280; }
-    .btn { padding:10px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-size: 14px; white-space: nowrap; }
+    /* Botões */
+    .btn { padding:10px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-size: 14px; white-space: nowrap; transition: background 0.2s; }
     .btn.secondary { background:#6b7280; }
+    .btn:active { opacity: 0.8; }
+    
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }
     input[type="month"], select, input, textarea { padding:10px; border-radius:6px; border:1px solid #e5e7eb; width: 100%; }
     .font-bold { font-weight: 700; }
-    
-    /* CORES DEFINITIVAS */
     .text-green { color: #16a34a; }
     .text-red { color: #dc2626; }
+    
+    /* Fix para navegação mobile */
+    nav { position: relative; z-index: 10; }
   </style>
 </head>
 <body>
@@ -64,10 +68,10 @@
     <div id="app-content" class="hidden">
         <nav class="mb-4 overflow-x-auto pb-2">
         <div class="flex gap-2 whitespace-nowrap">
-            <button class="tab-btn btn active" data-tab="dashboard">Dashboard</button>
-            <button class="tab-btn btn secondary" data-tab="transacoes">Transações</button>
-            <button class="tab-btn btn secondary" data-tab="futuras">Futuras</button>
-            <button class="tab-btn btn secondary" data-tab="extrato">Extrato</button>
+            <button id="tab-dashboard" class="tab-btn btn" data-tab="dashboard">Dashboard</button>
+            <button id="tab-transacoes" class="tab-btn btn secondary" data-tab="transacoes">Transações</button>
+            <button id="tab-futuras" class="tab-btn btn secondary" data-tab="futuras">Futuras</button>
+            <button id="tab-extrato" class="tab-btn btn secondary" data-tab="extrato">Extrato</button>
         </div>
         </nav>
 
@@ -129,6 +133,7 @@
             <div id="extrato-preview" class="card overflow-x-auto"><div class="small muted mb-2">Pré-visualização</div><div id="extrato-list">Nenhum dado</div></div>
         </section>
         </main>
+        
         <div class="fab" id="fab-add" title="Adicionar">+</div>
     </div>
 
@@ -166,12 +171,12 @@
   </div>
 
 <script type="module">
-// --- IMPORTAÇÕES FIREBASE VIA CDN (NECESSÁRIO PARA NAVEGADOR) ---
+// IMPORTAÇÕES
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- SUAS CHAVES CORRETAS ---
+// CONFIGURAÇÃO
 const firebaseConfig = {
   apiKey: "AIzaSyC5aGRF1qU1rhfi7jHZywy5NNaPr6lJfvo",
   authDomain: "controlefinanceirov1-c2b59.firebaseapp.com",
@@ -186,35 +191,48 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// VARIÁVEIS
 let currentUser = null;
 let transactions = [];
 
-// DOM
+// DOM & UI
 const appContent = document.getElementById('app-content');
 const loginForm = document.getElementById('login-form');
 const userInfo = document.getElementById('user-info');
 const userEmailDisplay = document.getElementById('user-email');
-const btnLogin = document.getElementById('btn-login');
-const btnSignup = document.getElementById('btn-signup');
 const btnLogout = document.getElementById('btn-logout');
 const authMsg = document.getElementById('auth-msg');
-const emailInput = document.getElementById('email');
-const passwordInput = document.getElementById('password');
 
-// Color Helper
-function applyColor(el, val, type=null){
-  if(!el) return;
-  el.classList.remove('text-green', 'text-red');
-  if(type === 'entrada') el.classList.add('text-green');
-  else if(type === 'saida') el.classList.add('text-red');
-  else {
-    if(val >= 0) el.classList.add('text-green');
-    else el.classList.add('text-red');
-  }
-}
+// NAVEGAÇÃO (TABS) CORRIGIDA
+const tabBtns = document.querySelectorAll('.tab-btn');
+const sections = { 
+    dashboard: document.getElementById('dashboard'), 
+    transacoes: document.getElementById('transacoes'), 
+    futuras: document.getElementById('futuras'), 
+    extrato: document.getElementById('extrato') 
+};
 
-// --- AUTH LOGIC ---
+tabBtns.forEach(btn => {
+    btn.addEventListener('click', (e) => {
+        e.preventDefault(); // Previne comportamento padrão
+        const targetId = btn.dataset.tab;
+        
+        // Atualiza botões
+        tabBtns.forEach(b => {
+            b.classList.remove('active');
+            b.classList.add('secondary');
+        });
+        btn.classList.remove('secondary');
+        btn.classList.add('active');
+
+        // Atualiza seções
+        Object.values(sections).forEach(s => s.classList.add('hidden'));
+        if(sections[targetId]) {
+            sections[targetId].classList.remove('hidden');
+        }
+    });
+});
+
+// --- AUTH ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
@@ -230,172 +248,85 @@ onAuthStateChanged(auth, (user) => {
         userInfo.classList.add('hidden');
         btnLogout.classList.add('hidden');
         appContent.classList.add('hidden');
-        transactions = [];
     }
 });
 
-btnLogin.onclick = async () => {
+// Botoes de Login
+document.getElementById('btn-login').onclick = async () => {
     try {
-        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-        authMsg.textContent = "";
+        await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
     } catch (e) { authMsg.textContent = "Erro: " + e.message; }
 };
-
-btnSignup.onclick = async () => {
+document.getElementById('btn-signup').onclick = async () => {
     try {
-        await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
-        authMsg.textContent = "";
-        alert("Conta criada! Você já está logado.");
-    } catch (e) { authMsg.textContent = "Erro ao criar: " + e.message; }
+        await createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value);
+        alert("Conta criada!");
+    } catch (e) { authMsg.textContent = "Erro: " + e.message; }
 };
+btnLogout.onclick = async () => { await signOut(auth); window.location.reload(); };
 
-btnLogout.onclick = async () => { await signOut(auth); };
-
-// --- LÓGICA DO SISTEMA ---
-
+// --- DADOS ---
 async function fetchTransactions() {
     if(!currentUser) return;
-    // Pega todas as transações do usuário
     const q = query(collection(db, "transactions"), where("user_id", "==", currentUser.uid));
     const querySnapshot = await getDocs(q);
-    
     transactions = [];
-    querySnapshot.forEach((doc) => {
-        transactions.push({ id: doc.id, ...doc.data() });
-    });
-    // Ordena por data (decrescente)
+    querySnapshot.forEach((doc) => { transactions.push({ id: doc.id, ...doc.data() }); });
     transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
     return transactions;
 }
 
-// Salvar
-document.getElementById('form').onsubmit = async (e) => {
-    e.preventDefault();
-    if(!currentUser) return;
-    
-    const id = document.getElementById('tx-id').value;
-    const valStr = document.getElementById('field-valor').value.replace(/\D/g,'');
-    const amount = valStr ? Number(valStr)/100 : 0;
-    
-    const data = {
-        user_id: currentUser.uid,
-        amount: amount,
-        type: document.getElementById('field-tipo').value,
-        date: document.getElementById('field-data').value,
-        category: document.getElementById('field-categoria').value,
-        description: document.getElementById('field-desc').value,
-        status: document.getElementById('field-status').value,
-        recurrence: document.getElementById('field-recurrence').value
-    };
-
-    try {
-        if(id) {
-            await updateDoc(doc(db, "transactions", id), data);
-        } else {
-            await addDoc(collection(db, "transactions"), data);
-        }
-        document.getElementById('modal').classList.add('hidden');
-        await fetchTransactions();
-        renderAll();
-        alert("Salvo com sucesso!");
-    } catch (e) {
-        alert("Erro ao salvar: " + e.message);
-        console.error(e);
-    }
-};
-
-// Excluir
-async function deleteTx(id) {
-    if(!confirm("Excluir registro?")) return;
-    try {
-        await deleteDoc(doc(db, "transactions", id));
-        await fetchTransactions();
-        renderAll();
-    } catch(e) { alert("Erro ao excluir"); }
+// HELPERS
+function applyColor(el, val, type=null){
+  if(!el) return;
+  el.classList.remove('text-green', 'text-red');
+  if(type === 'entrada') el.classList.add('text-green');
+  else if(type === 'saida') el.classList.add('text-red');
+  else { val >= 0 ? el.classList.add('text-green') : el.classList.add('text-red'); }
 }
-
-// Renderização Geral
-function renderAll() {
-    renderDashboard();
-    renderTable();
-    renderFuturas();
-    renderExtrato();
-}
-
 function fmt(v) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 function formatDate(d) { if(!d) return ''; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
 
+// RENDER
 function renderDashboard() {
     const m = document.getElementById('dash-month').value;
     const txs = transactions.filter(t => t.date.startsWith(m));
-    
     const rec = txs.filter(t=>t.type==='entrada' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
     const desp = txs.filter(t=>t.type==='saida' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
     
-    const elRec = document.getElementById('total-receitas-mes');
-    elRec.textContent = fmt(rec);
-    applyColor(elRec, rec, 'entrada');
-
-    const elDesp = document.getElementById('total-despesas-mes');
-    elDesp.textContent = fmt(desp);
-    applyColor(elDesp, desp, 'saida');
-
-    const elSaldo = document.getElementById('saldo-mes');
-    elSaldo.textContent = fmt(rec - desp);
-    applyColor(elSaldo, rec - desp);
+    const elRec = document.getElementById('total-receitas-mes'); elRec.textContent = fmt(rec); applyColor(elRec, rec, 'entrada');
+    const elDesp = document.getElementById('total-despesas-mes'); elDesp.textContent = fmt(desp); applyColor(elDesp, desp, 'saida');
+    const elSaldo = document.getElementById('saldo-mes'); elSaldo.textContent = fmt(rec - desp); applyColor(elSaldo, rec - desp);
     
     const prev = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
-    const elPrev = document.getElementById('receitas-previstas');
-    elPrev.textContent = fmt(prev);
-    applyColor(elPrev, prev, 'entrada');
+    const elPrev = document.getElementById('receitas-previstas'); elPrev.textContent = fmt(prev); applyColor(elPrev, prev, 'entrada');
     
     const pagar = transactions.filter(t=>t.status==='pendente' && t.type==='saida').reduce((s,i)=>s+i.amount,0);
-    const elPagar = document.getElementById('contas-a-pagar');
-    elPagar.textContent = fmt(pagar);
-    applyColor(elPagar, pagar, 'saida');
+    const elPagar = document.getElementById('contas-a-pagar'); elPagar.textContent = fmt(pagar); applyColor(elPagar, pagar, 'saida');
 
     const receber = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
     const previsao = receber - pagar;
-    const elFut = document.getElementById('previsao-futura');
-    elFut.textContent = fmt(previsao);
-    applyColor(elFut, previsao);
+    const elFut = document.getElementById('previsao-futura'); elFut.textContent = fmt(previsao); applyColor(elFut, previsao);
 }
 
 function renderTable() {
     const m = document.getElementById('trans-month').value;
     const tbody = document.getElementById('trans-tbody');
     tbody.innerHTML = '';
-    
     const txs = transactions.filter(t => t.date.startsWith(m));
-    
-    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center muted">Sem dados neste mês.</td></tr>'; return; }
-
+    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center muted">Sem dados.</td></tr>'; return; }
     txs.forEach(t => {
         const tr = document.createElement('tr');
         const isRec = t.type === 'entrada';
         const cssClass = isRec ? 'text-green' : 'text-red';
         const sign = isRec ? '+' : '-';
-        
-        tr.innerHTML = `
-            <td>${formatDate(t.date)}</td>
-            <td>${t.description}</td>
-            <td>${t.category}</td>
-            <td>${isRec ? 'Receita' : 'Dívida'}</td>
-            <td class="text-right font-bold ${cssClass}">${sign} ${fmt(t.amount)}</td>
-            <td>${t.status}</td>
-            <td>
-                <button class="btn-edit btn" data-id="${t.id}">Editar</button>
-                <button class="btn-del btn secondary" data-id="${t.id}">Excluir</button>
-            </td>
-        `;
+        tr.innerHTML = `<td>${formatDate(t.date)}</td><td>${t.description}</td><td>${t.category}</td><td>${isRec?'Receita':'Dívida'}</td><td class="text-right font-bold ${cssClass}">${sign} ${fmt(t.amount)}</td><td>${t.status}</td><td><button class="btn-edit btn" data-id="${t.id}">Editar</button> <button class="btn-del btn secondary" data-id="${t.id}">Excluir</button></td>`;
         tbody.appendChild(tr);
     });
-
     document.querySelectorAll('.btn-del').forEach(b => b.onclick = () => deleteTx(b.dataset.id));
     document.querySelectorAll('.btn-edit').forEach(b => b.onclick = () => openEdit(b.dataset.id));
 }
 
-// Futuras
 function renderFuturas(){
     const m = document.getElementById('futuras-month').value;
     const tbody = document.getElementById('futuras-tbody');
@@ -415,7 +346,6 @@ function renderFuturas(){
     });
 }
 
-// Extrato
 function renderExtrato(){
     const m = document.getElementById('extrato-month').value;
     const list = document.getElementById('extrato-list');
@@ -432,7 +362,38 @@ function renderExtrato(){
     list.innerHTML = h;
 }
 
-// Helpers UI
+function renderAll() { renderDashboard(); renderTable(); renderFuturas(); renderExtrato(); }
+
+// CRUD
+document.getElementById('form').onsubmit = async (e) => {
+    e.preventDefault();
+    if(!currentUser) return;
+    const id = document.getElementById('tx-id').value;
+    const valStr = document.getElementById('field-valor').value.replace(/\D/g,'');
+    const amount = valStr ? Number(valStr)/100 : 0;
+    const data = {
+        user_id: currentUser.uid,
+        amount: amount,
+        type: document.getElementById('field-tipo').value,
+        date: document.getElementById('field-data').value,
+        category: document.getElementById('field-categoria').value,
+        description: document.getElementById('field-desc').value,
+        status: document.getElementById('field-status').value,
+        recurrence: document.getElementById('field-recurrence').value
+    };
+    try {
+        if(id) await updateDoc(doc(db, "transactions", id), data);
+        else await addDoc(collection(db, "transactions"), data);
+        document.getElementById('modal').classList.add('hidden');
+        await fetchTransactions(); renderAll(); alert("Salvo!");
+    } catch (e) { alert("Erro: " + e.message); }
+};
+
+async function deleteTx(id) {
+    if(!confirm("Excluir?")) return;
+    try { await deleteDoc(doc(db, "transactions", id)); await fetchTransactions(); renderAll(); } catch(e) { alert("Erro"); }
+}
+
 function openEdit(id){
     const t = transactions.find(x=>x.id===id);
     if(!t) return;
@@ -445,36 +406,23 @@ function openEdit(id){
     document.getElementById('modal').classList.remove('hidden');
 }
 
+// UI Helpers
 const fVal = document.getElementById('field-valor');
 fVal.addEventListener('input', (e)=>{
-    let v = e.target.value.replace(/\D/g,'');
-    if(!v) return;
+    let v = e.target.value.replace(/\D/g,''); if(!v) return;
     e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 });
 
-// Datas
 const today = new Date().toISOString().split('T')[0];
 const ym = today.slice(0,7);
-['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => {
-    const el = document.getElementById(id);
-    if(el) { el.value = ym; el.onchange = renderAll; }
-});
+['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => { const el = document.getElementById(id); if(el){el.value=ym; el.onchange=renderAll;} });
 
-// Botões Globais
-document.getElementById('btn-refresh').onclick = initData;
-document.getElementById('btn-refresh-all').onclick = initData;
-document.getElementById('btn-refresh-fut').onclick = initData;
-document.getElementById('fab-add').onclick = () => {
-    document.getElementById('form').reset();
-    document.getElementById('tx-id').value = '';
-    document.getElementById('modal').classList.remove('hidden');
-};
+document.getElementById('fab-add').onclick = () => { document.getElementById('form').reset(); document.getElementById('tx-id').value=''; document.getElementById('modal').classList.remove('hidden'); };
 document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').classList.add('hidden');
+document.getElementById('btn-refresh').onclick = initData;
+document.getElementById('btn-refresh-fut').onclick = initData;
 
-async function initData() {
-    await fetchTransactions();
-    renderAll();
-}
+async function initData() { await fetchTransactions(); renderAll(); }
 
 </script>
 </body>
