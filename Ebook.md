@@ -51,20 +51,9 @@ O "motor" do sistema é o Firebase. Abaixo, o passo a passo exato da configuraç
 2.  Criamos o banco em modo de teste inicial.
 3.  **Regras de Segurança (Crítico):** Para garantir que o sistema funcione para sempre e com segurança total, alteramos as regras na aba "Regras" para:
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /{document=**} {
-      // Permite leitura/gravação APENAS se o usuário estiver logado
-      allow read, write: if request.auth != null;
-    }
-  }
-}
 
----
 
-## 4. Estrutura do Front-end (Mobile First)
+### 4. Estrutura do Front-end (Mobile First)
 
 Utilizamos o framework **TailwindCSS** via CDN para estilizar todo o projeto. O foco principal do desenvolvimento foi a usabilidade em dispositivos móveis (celulares).
 
@@ -115,3 +104,5 @@ O sistema foi desenhado para ser usado como um aplicativo nativo:
 2.  Acessa o menu de opções do navegador.
 3.  Seleciona **"Adicionar à Tela Inicial"**.
 4.  O sistema passa a rodar em tela cheia, removendo a barra de endereços e comportando-se como um App instalado.
+
+```javascript
