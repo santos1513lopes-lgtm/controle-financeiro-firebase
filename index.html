@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Controle Financeiro - Firebase v29 (Reset)</title>
+  <title>Controle Financeiro - Firebase v30</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -21,7 +21,7 @@
     th, td { padding:12px 8px; border-bottom:1px solid #f1f5f9; text-align:left; vertical-align: middle; font-size: 14px; }
     .btn { padding:8px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
     .btn.secondary { background:#6b7280; }
-    .btn.danger { background:#ef4444; } /* Botão Vermelho */
+    .btn.danger { background:#ef4444; }
     .truncate-text { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     input, select, textarea { padding:10px; border-radius:8px; border:1px solid #e5e7eb; width: 100%; font-size: 16px; }
     .text-green-600 { color: #16a34a !important; font-weight: 700; }
@@ -188,7 +188,7 @@
                             <option value="Saúde">💊 Saúde</option>
                             <option value="Lazer">🎉 Lazer</option>
                             <option value="Educação">📚 Educação</option>
-                            <option value="Poupança">🐷 Poupança</option>
+                            <option value="Cartão de Crédito">💳 Cartão de Crédito</option> <option value="Donativos">🤝 Donativos / Doações</option> <option value="Poupança">🐷 Poupança</option>
                             <option value="Investimento">💰 Investimentos</option>
                             <option value="Outros">🔹 Outros</option>
                         </optgroup>
@@ -261,7 +261,7 @@ document.getElementById('btn-login').onclick = async () => { try { await signInW
 document.getElementById('btn-signup').onclick = async () => { try { await createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); alert("Conta criada!"); } catch (e) { authMsg.textContent = "Erro: " + e.message; } };
 document.getElementById('btn-logout').onclick = async () => { await signOut(auth); window.location.reload(); };
 
-// --- BOTÃO ZERAR DADOS (LÓGICA DE LIMPEZA) ---
+// RESET DATA
 document.getElementById('btn-wipe-data').onclick = async () => {
     if (!currentUser) return;
     if (!confirm("ATENÇÃO: Tem certeza que deseja apagar TODAS as suas transações?")) return;
@@ -273,18 +273,14 @@ document.getElementById('btn-wipe-data').onclick = async () => {
     document.getElementById('btn-wipe-data').disabled = true;
 
     try {
-        // Buscar todos os documentos do usuário
         const q = query(collection(db, "transactions"), where("user_id", "==", currentUser.uid));
         const snapshot = await getDocs(q);
-        
-        // Deletar um por um
         const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
         await Promise.all(deletePromises);
-
-        alert("Todos os dados foram apagados com sucesso.");
+        alert("Dados apagados.");
         window.location.reload();
     } catch (e) {
-        alert("Erro ao apagar: " + e.message);
+        alert("Erro: " + e.message);
         document.getElementById('btn-wipe-data').textContent = "Zerar";
         document.getElementById('btn-wipe-data').disabled = false;
     }
@@ -323,11 +319,7 @@ function formatDate(d) { if(!d) return ''; const p=d.split('-'); return `${p[2]}
 function renderChart(txs) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     const expenses = txs.filter(t => t.type === 'saida' && t.status === 'efetivado');
-    
-    if(expenses.length === 0) {
-        if(chartInstance) { chartInstance.destroy(); chartInstance = null; }
-        return;
-    }
+    if(expenses.length === 0) { if(chartInstance) { chartInstance.destroy(); chartInstance = null; } return; }
     const categories = {};
     expenses.forEach(t => { const cat = t.category || 'Outros'; categories[cat] = (categories[cat] || 0) + t.amount; });
     const labels = Object.keys(categories);
