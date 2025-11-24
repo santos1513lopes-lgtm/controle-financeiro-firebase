@@ -3,49 +3,31 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Controle Financeiro - Firebase v16 (Expansivo)</title>
+  <title>Controle Financeiro - Firebase v17</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   
   <style>
-    /* Ajuste Geral para Mobile - Fundo mais limpo */
+    /* Visual Mobile Expansivo (v16) */
     body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f1f5f9; padding-bottom: 90px; }
-    
-    /* Cards mais expansivos e com sombra suave */
     .card { background:#fff; border-radius:12px; padding:14px; box-shadow:0 2px 8px rgba(0,0,0,0.04); margin-bottom:12px; width: 100%; }
-    
-    /* Botão Flutuante Maior e Mais Seguro */
     .fab { position:fixed; right:20px; bottom:25px; background:#f59e0b; color:#fff; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:36px; cursor:pointer; box-shadow:0 6px 20px rgba(245,158,11,0.4); z-index: 50; transition: transform 0.1s; }
     .fab:active { transform: scale(0.90); }
-    
     .hidden { display:none !important; }
-    
-    /* Tabela Otimizada para Mobile */
-    table { width:100%; border-collapse:collapse; min-width: 500px; /* Reduzi um pouco para caber melhor */ }
-    th, td { padding:12px 6px; border-bottom:1px solid #f1f5f9; text-align:left; font-size: 13px; } /* Fonte levemente menor para caber mais */
-    
+    table { width:100%; border-collapse:collapse; min-width: 500px; }
+    th, td { padding:12px 6px; border-bottom:1px solid #f1f5f9; text-align:left; font-size: 13px; }
     .muted { color:#6b7280; }
-    
-    /* Botões Full Touch */
     .btn { padding:12px 16px; border-radius:10px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-size: 15px; font-weight: 500; white-space: nowrap; transition: opacity 0.2s; }
     .btn.secondary { background:#9ca3af; }
     .btn:active { opacity: 0.8; }
-    
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }
-    
-    /* Inputs maiores para o dedo */
     input[type="month"], select, input, textarea { padding:12px; border-radius:8px; border:1px solid #e2e8f0; width: 100%; font-size: 16px; background: #fff; }
-    
     .font-bold { font-weight: 700; }
     .text-green { color: #16a34a; }
     .text-red { color: #dc2626; }
-    
-    /* Fix nav */
     nav { position: relative; z-index: 10; -webkit-overflow-scrolling: touch; }
-    
-    /* Tab Buttons mais modernos */
     .tab-btn { border-radius: 20px; padding: 8px 16px; font-size: 13px; }
   </style>
 </head>
@@ -79,7 +61,7 @@
         </div>
         
         <div id="global-actions" class="hidden flex gap-2">
-            <button id="btn-refresh-all" class="btn secondary flex-1 bg-gray-400">Atualizar Dados</button>
+            <button id="btn-refresh-all" class="btn secondary flex-1 bg-gray-400">Atualizar</button>
         </div>
       </div>
     </header>
@@ -87,10 +69,10 @@
     <div id="app-content" class="hidden">
         <nav class="mb-4 overflow-x-auto pb-2 px-1">
         <div class="flex gap-2 whitespace-nowrap">
-            <button id="tab-dashboard" class="tab-btn btn" data-tab="dashboard">Painel</button>
-            <button id="tab-transacoes" class="tab-btn btn secondary" data-tab="transacoes">Lançamentos</button>
-            <button id="tab-futuras" class="tab-btn btn secondary" data-tab="futuras">Futuras</button>
-            <button id="tab-extrato" class="tab-btn btn secondary" data-tab="extrato">Relatórios</button>
+            <button class="tab-btn btn active" data-tab="dashboard">Painel</button>
+            <button class="tab-btn btn secondary" data-tab="transacoes">Lançamentos</button>
+            <button class="tab-btn btn secondary" data-tab="futuras">Futuras</button>
+            <button class="tab-btn btn secondary" data-tab="extrato">Relatórios</button>
         </div>
         </nav>
 
@@ -99,14 +81,12 @@
             <div class="mb-4">
                 <input id="dash-month" type="month" class="font-bold text-gray-700 bg-gray-50 border-0" />
             </div>
-            
             <div class="grid grid-cols-1 gap-3 mb-3">
                 <div class="bg-gray-50 rounded-xl p-4 border border-gray-100 text-center">
                     <div class="text-xs muted uppercase tracking-widest mb-1">Saldo Líquido (Mês)</div>
                     <div id="saldo-mes" class="text-4xl font-bold text-gray-800">R$ 0,00</div>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-3 mb-3">
                 <div class="bg-green-50 rounded-xl p-3 border border-green-100">
                     <div class="text-xs text-green-700 uppercase mb-1">Receitas</div>
@@ -117,7 +97,6 @@
                     <div id="total-despesas-mes" class="text-lg font-bold text-red">R$ 0,00</div>
                 </div>
             </div>
-
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div class="card mb-0 border border-gray-100">
                     <div class="text-xs muted uppercase">A Receber (Previsto)</div>
@@ -145,10 +124,10 @@
                     <button id="btn-refresh" class="btn secondary p-3">↻</button>
                 </div>
             </div>
-            
-            <div class="overflow-x-auto pb-2 -mx-2 px-2"> <table>
-                <thead><tr><th>Dia</th><th>Desc</th><th>Cat</th><th>Valor</th><th>Ação</th></tr></thead>
-                <tbody id="trans-tbody"><tr><td colspan="5" class="text-center muted py-8">Carregando...</td></tr></tbody>
+            <div class="overflow-x-auto pb-2 -mx-2 px-2">
+            <table>
+                <thead><tr><th>Dia</th><th>Desc</th><th>Valor</th><th>Ação</th></tr></thead>
+                <tbody id="trans-tbody"><tr><td colspan="4" class="text-center muted py-8">Carregando...</td></tr></tbody>
             </table>
             </div>
         </section>
@@ -194,27 +173,22 @@
                 <label class="text-xs muted ml-1">Valor</label>
                 <input id="field-valor" required placeholder="R$ 0,00" class="text-3xl font-bold text-center text-gray-800 border-b-2 border-t-0 border-x-0 rounded-none focus:ring-0" />
             </div>
-            
             <div class="grid grid-cols-2 gap-3">
                 <div><label class="text-xs muted">Tipo</label><select id="field-tipo" class="font-medium"><option value="saida">🔴 Despesa</option><option value="entrada">🟢 Receita</option></select></div>
                 <div><label class="text-xs muted">Data</label><input id="field-data" type="date" required class="font-medium" /></div>
             </div>
-            
             <input id="field-categoria" placeholder="Categoria (ex: Mercado)" />
             <input id="field-desc" placeholder="Descrição (Opcional)" />
-            
             <div class="grid grid-cols-2 gap-3">
                 <div><label class="text-xs muted">Status</label><select id="field-status"><option value="efetivado">✅ Pago</option><option value="pendente">⏳ Pendente</option></select></div>
                 <div><label class="text-xs muted">Repetir?</label><select id="field-recurrence"><option value="none">Não</option><option value="parcel">Parcelado</option><option value="fixed_monthly">Fixo Mensal</option></select></div>
             </div>
-            
             <div id="recurrence-details" class="hidden bg-blue-50 p-3 rounded border border-blue-100">
               <div class="grid grid-cols-2 gap-2">
                 <input id="recurrence-count" type="number" min="2" placeholder="Vezes" />
                 <select id="recurrence-interval"><option value="monthly">Mensal</option><option value="weekly">Semanal</option></select>
               </div>
             </div>
-            
             <button type="submit" id="btn-save" class="btn w-full py-3 text-lg shadow-lg mt-2">Salvar</button>
           </div>
         </form>
@@ -233,166 +207,4 @@ const firebaseConfig = {
   projectId: "controlefinanceirov1-c2b59",
   storageBucket: "controlefinanceirov1-c2b59.firebasestorage.app",
   messagingSenderId: "28738888590",
-  appId: "1:28738888590:web:ddfca08150f981fb163adf"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-
-let currentUser = null;
-let transactions = [];
-
-// DOM References
-const appContent = document.getElementById('app-content');
-const loginForm = document.getElementById('login-form');
-const userInfo = document.getElementById('user-info');
-const userEmailDisplay = document.getElementById('user-email');
-const btnLogout = document.getElementById('btn-logout');
-const authMsg = document.getElementById('auth-msg');
-const globalActions = document.getElementById('global-actions');
-
-// Tabs
-const tabBtns = document.querySelectorAll('.tab-btn');
-const sections = { dashboard: document.getElementById('dashboard'), transacoes: document.getElementById('transacoes'), futuras: document.getElementById('futuras'), extrato: document.getElementById('extrato') };
-
-tabBtns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = btn.dataset.tab;
-        tabBtns.forEach(b => { b.classList.remove('active'); b.classList.add('secondary'); });
-        btn.classList.remove('secondary'); btn.classList.add('active');
-        Object.values(sections).forEach(s => s.classList.add('hidden'));
-        if(sections[targetId]) sections[targetId].classList.remove('hidden');
-    });
-});
-
-// Auth
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUser = user;
-        loginForm.classList.add('hidden');
-        userInfo.classList.remove('hidden');
-        globalActions.classList.remove('hidden');
-        userEmailDisplay.textContent = user.email;
-        appContent.classList.remove('hidden');
-        initData();
-    } else {
-        currentUser = null;
-        loginForm.classList.remove('hidden');
-        userInfo.classList.add('hidden');
-        globalActions.classList.add('hidden');
-        appContent.classList.add('hidden');
-    }
-});
-
-document.getElementById('btn-login').onclick = async () => {
-    try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } 
-    catch (e) { authMsg.textContent = "Erro: " + e.message; }
-};
-document.getElementById('btn-signup').onclick = async () => {
-    try { await createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); alert("Conta criada!"); } 
-    catch (e) { authMsg.textContent = "Erro: " + e.message; }
-};
-btnLogout.onclick = async () => { await signOut(auth); window.location.reload(); };
-
-// Helpers
-function applyColor(el, val, type=null){
-  if(!el) return;
-  el.classList.remove('text-green', 'text-red');
-  if(type === 'entrada') el.classList.add('text-green');
-  else if(type === 'saida') el.classList.add('text-red');
-  else { val >= 0 ? el.classList.add('text-green') : el.classList.add('text-red'); }
-}
-function fmt(v) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-function formatDate(d) { if(!d) return ''; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; } // Only Date
-
-// Data Logic
-async function fetchTransactions() {
-    if(!currentUser) return;
-    const q = query(collection(db, "transactions"), where("user_id", "==", currentUser.uid));
-    const querySnapshot = await getDocs(q);
-    transactions = [];
-    querySnapshot.forEach((doc) => { transactions.push({ id: doc.id, ...doc.data() }); });
-    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-    return transactions;
-}
-
-// Render Dashboard (Novo Layout Mobile)
-function renderDashboard() {
-    const m = document.getElementById('dash-month').value;
-    const txs = transactions.filter(t => t.date.startsWith(m));
-    
-    const rec = txs.filter(t=>t.type==='entrada' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
-    const desp = txs.filter(t=>t.type==='saida' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
-    
-    document.getElementById('total-receitas-mes').textContent = fmt(rec);
-    document.getElementById('total-despesas-mes').textContent = fmt(desp);
-    
-    const elSaldo = document.getElementById('saldo-mes');
-    elSaldo.textContent = fmt(rec - desp);
-    applyColor(elSaldo, rec - desp);
-    
-    const prev = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
-    document.getElementById('receitas-previstas').textContent = fmt(prev);
-    
-    const pagar = transactions.filter(t=>t.status==='pendente' && t.type==='saida').reduce((s,i)=>s+i.amount,0);
-    document.getElementById('contas-a-pagar').textContent = fmt(pagar);
-
-    const receber = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
-    const previsao = receber - pagar;
-    const elFut = document.getElementById('previsao-futura');
-    elFut.textContent = fmt(previsao);
-    applyColor(elFut, previsao);
-}
-
-// Render Tables
-function renderTable() {
-    const m = document.getElementById('trans-month').value;
-    const tbody = document.getElementById('trans-tbody');
-    tbody.innerHTML = '';
-    const txs = transactions.filter(t => t.date.startsWith(m));
-    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="5" class="text-center muted py-4">Sem dados.</td></tr>'; return; }
-    
-    txs.forEach(t => {
-        const tr = document.createElement('tr');
-        const isRec = t.type === 'entrada';
-        const cssClass = isRec ? 'text-green' : 'text-red';
-        // Tabela simplificada para mobile
-        tr.innerHTML = `
-            <td><div class="font-bold text-gray-700">${t.date.split('-')[2]}</div></td>
-            <td><div class="font-medium">${t.description}</div><div class="text-xs muted">${t.category}</div></td>
-            <td class="hidden md:table-cell">${t.category}</td> 
-            <td class="text-right font-bold ${cssClass}">${fmt(t.amount)}</td>
-            <td class="text-right">
-                <button class="btn-edit text-blue-500 font-bold px-2" data-id="${t.id}">✎</button>
-                <button class="btn-del text-red-500 font-bold px-2" data-id="${t.id}">×</button>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-    document.querySelectorAll('.btn-del').forEach(b => b.onclick = () => deleteTx(b.dataset.id));
-    document.querySelectorAll('.btn-edit').forEach(b => b.onclick = () => openEdit(b.dataset.id));
-}
-
-function renderFuturas(){
-    const m = document.getElementById('futuras-month').value;
-    const tbody = document.getElementById('futuras-tbody');
-    tbody.innerHTML = '';
-    const txs = transactions.filter(t => t.status === 'pendente' && t.date.startsWith(m));
-    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center muted py-4">Sem pendências.</td></tr>'; return; }
-    txs.forEach(t => {
-        const tr = document.createElement('tr');
-        const isRec = t.type === 'entrada';
-        const cssClass = isRec ? 'text-green' : 'text-red';
-        tr.innerHTML = `
-            <td>${t.date.split('-')[2]}</td>
-            <td>${t.description}</td>
-            <td class="text-right font-bold ${cssClass}">${fmt(t.amount)}</td>
-            <td class="text-right"><button class="btn-baixa btn py-1 px-2 text-xs" data-id="${t.id}">✔</button></td>
-        `;
-        tbody.appendChild(tr);
-    });
-    document.querySelectorAll('.btn-baixa').forEach(b => b.onclick = async () => {
-        if(!confirm("Confirmar baixa?")) return;
-        await updateDoc(
+  app
