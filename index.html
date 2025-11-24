@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Controle Financeiro - Firebase v36 (Parcelamento)</title>
+  <title>Controle Financeiro - Firebase v37 (Correção Parcelas)</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -33,14 +33,17 @@
     table { width:100%; border-collapse:collapse; }
     th, td { padding:12px 8px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align: middle; font-size: 14px; }
     .dark th, .dark td { border-bottom-color: #334155; }
+    
     .btn { padding:10px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
     .btn.secondary { background:#64748b; }
     .btn.danger { background:#ef4444; }
     .btn.dark-toggle { background: transparent; border: 1px solid #4b5563; color: #4b5563; }
     .dark .btn.dark-toggle { color: #cbd5e1; border-color: #cbd5e1; }
+
     .truncate-text { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     input, select, textarea { padding:10px; border-radius:8px; border:1px solid #e5e7eb; width: 100%; font-size: 16px; outline: none; transition: all 0.3s ease; }
     .dark input, .dark select, .dark textarea { background-color: #334155; border-color: #475569; color: #f1f5f9; }
+    
     .text-green-600 { color: #16a34a !important; font-weight: 700; }
     .text-red-600 { color: #dc2626 !important; font-weight: 700; }
     .dark .text-green-600 { color: #4ade80 !important; }
@@ -48,18 +51,25 @@
     .dark .muted { color: #94a3b8 !important; }
     .dark .text-gray-800 { color: #f1f5f9 !important; }
     .dark .text-gray-500 { color: #cbd5e1 !important; }
+
     .chart-container { position: relative; height: 250px; width: 100%; display: flex; justify-content: center; }
     .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 10px 0; z-index: 50; }
     .dark .mobile-nav { background-color: #1e293b; border-top-color: #334155; }
     .nav-item { display: flex; flex-direction: column; align-items: center; color: #9ca3af; font-size: 10px; background: none; border: none; }
     .nav-item.active { color: #f59e0b; font-weight: bold; }
     .nav-item i { font-size: 20px; margin-bottom: 4px; }
+    
+    /* Badge de Vencida */
+    .badge-alert { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; background: #fee2e2; color: #dc2626; font-weight: bold; display: inline-block; margin-top: 2px; }
+    .dark .badge-alert { background: #7f1d1d; color: #fca5a5; }
+
     @media (max-width: 768px) { .desktop-nav { display: none; } .fab { bottom: 80px; } }
     @media (min-width: 769px) { .mobile-nav { display: none; } .desktop-nav { display: flex; } .fab { bottom: 30px; } }
   </style>
 </head>
 <body class="bg-gray-50 dark:bg-darkbg text-gray-800 dark:text-gray-100">
   <div class="max-w-6xl mx-auto p-4 md:p-6">
+    
     <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
       <div class="flex items-center justify-between w-full md:w-auto gap-4">
         <div>
@@ -71,15 +81,17 @@
         </div>
       </div>
       <div id="auth-area" class="w-full md:w-auto">
+        
         <div id="login-form" class="card bg-white dark:bg-darkcard p-4 mb-0">
             <div class="flex flex-col gap-3">
                 <input id="email" placeholder="E-mail" class="p-2 border rounded w-full mb-0" />
                 <input id="password" type="password" placeholder="Senha" class="p-2 border rounded w-full mb-0" />
                 <button id="btn-login" class="btn w-full">Entrar</button>
                 <div id="auth-msg" class="text-xs text-center text-red-500"></div>
-                <div class="text-xs text-center text-gray-400 mt-1">Acesso restrito a autorizados.</div>
+                <div class="text-xs text-center text-gray-400 mt-1">Acesso restrito.</div>
             </div>
         </div>
+
         <div id="user-actions" class="hidden flex gap-2 w-full md:w-auto">
             <button id="btn-refresh-all" class="btn secondary text-xs flex-1 md:flex-none"><i class="fas fa-sync"></i> Atualizar</button>
             <button id="btn-wipe-data" class="btn danger text-xs flex-1 md:flex-none"><i class="fas fa-trash-alt"></i> Zerar</button>
@@ -162,6 +174,7 @@
         </main>
 
         <div class="fab" id="fab-add"><i class="fas fa-plus"></i></div>
+        
         <div class="mobile-nav">
             <button class="nav-item active" data-tab="dashboard"><i class="fas fa-chart-pie"></i>Painel</button>
             <button class="nav-item" data-tab="transacoes"><i class="fas fa-list"></i>Trans.</button>
@@ -219,14 +232,38 @@
                 <div class="mb-3"><label class="text-xs text-gray-500 dark:text-gray-400">Descrição</label><textarea id="field-desc" placeholder="Detalhes..." rows="2" class="resize-none w-full border rounded"></textarea></div>
                 <div class="grid grid-cols-2 gap-3 mb-4">
                     <div><label class="text-xs text-gray-500 dark:text-gray-400">Status</label><select id="field-status" class="h-12 w-full border rounded"><option value="efetivado">✅ Pago</option><option value="pendente">⏳ Pendente</option></select></div>
-                    <div><label class="text-xs text-gray-500 dark:text-gray-400">Repetir?</label><select id="field-recurrence" class="h-12 w-full border rounded"><option value="none">Não</option><option value="parcel">Parcelar</option><option value="fixed_monthly">Mensal</option></select></div>
-                </div>
-                <div id="recurrence-details" class="hidden bg-blue-50 dark:bg-blue-900 p-3 rounded mb-4">
-                    <div class="grid grid-cols-2 gap-2">
-                        <input id="recurrence-count" type="number" min="2" placeholder="Qtd" class="w-full border rounded" />
-                        <select id="recurrence-interval" class="w-full border rounded"><option value="monthly">Mensal</option><option value="weekly">Semanal</option></select>
+                    
+                    <div><label class="text-xs text-gray-500 dark:text-gray-400">Repetir?</label>
+                        <select id="field-recurrence" class="h-12 w-full border rounded">
+                            <option value="none">Não</option>
+                            <option value="parcel">Parcelar (Ex: 3x)</option>
+                            <option value="fixed_monthly">Fixo Mensal</option>
+                        </select>
                     </div>
                 </div>
+
+                <div id="recurrence-details" class="hidden bg-blue-50 dark:bg-blue-900 p-3 rounded mb-4">
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-xs text-blue-800 dark:text-blue-200">Quantidade</label>
+                            <input id="recurrence-count" type="number" min="2" placeholder="Ex: 12" class="w-full border rounded" />
+                        </div>
+                        <div>
+                            <label class="text-xs text-blue-800 dark:text-blue-200">Frequência</label>
+                            <select id="recurrence-interval" class="w-full border rounded">
+                                <option value="monthly">Mensal</option>
+                                <option value="weekly">Semanal</option>
+                                <option value="biweekly">Quinzenal</option>
+                                <option value="custom">Personalizado (Dias)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div id="custom-days-container" class="hidden mt-2">
+                        <label class="text-xs text-blue-800 dark:text-blue-200">A cada quantos dias?</label>
+                        <input id="recurrence-days" type="number" min="1" placeholder="Ex: 20" class="w-full border rounded" />
+                    </div>
+                </div>
+
                 <button type="submit" id="btn-save" class="btn w-full py-3 text-lg shadow-lg">Salvar</button>
             </form>
         </div>
@@ -255,6 +292,7 @@ let currentUser = null;
 let transactions = [];
 let chartInstance = null;
 
+// UI Themes
 const btnTheme = document.getElementById('btn-theme');
 const htmlEl = document.documentElement;
 if (localStorage.getItem('theme') === 'dark') { htmlEl.classList.add('dark'); btnTheme.innerHTML = '<i class="fas fa-sun"></i>'; }
@@ -483,7 +521,25 @@ window.editTx = (id) => {
 window.delTx = async (id) => { if(confirm("Apagar?")) { await deleteDoc(doc(db, "transactions", id)); await fetchTransactions(); renderAll(); } };
 window.baixaTx = async (id) => { if(confirm("Baixar?")) { await updateDoc(doc(db, "transactions", id), { status: 'efetivado' }); await fetchTransactions(); renderAll(); } };
 
-// --- CRUD COM PARCELAMENTO (AQUI ESTÁ A CORREÇÃO) ---
+// --- NOVA LÓGICA DE PARCELAMENTO E DATAS CORRIGIDA ---
+// Função para adicionar dias ou meses corretamente
+function addInterval(dateStr, type, count) {
+    const d = new Date(dateStr + 'T12:00:00'); // Força meio-dia para evitar bug de fuso horário
+    
+    if (type === 'monthly') {
+        d.setMonth(d.getMonth() + count);
+    } else if (type === 'weekly') {
+        d.setDate(d.getDate() + (count * 7));
+    } else if (type === 'biweekly') {
+        d.setDate(d.getDate() + (count * 15)); // Padrão quinzenal 15 dias
+    } else if (type === 'custom') {
+        const days = parseInt(document.getElementById('recurrence-days').value) || 30;
+        d.setDate(d.getDate() + (count * days));
+    }
+    
+    return d.toISOString().split('T')[0];
+}
+
 document.getElementById('form').onsubmit = async (e) => {
     e.preventDefault();
     if(!currentUser) return;
@@ -491,50 +547,51 @@ document.getElementById('form').onsubmit = async (e) => {
     const id = document.getElementById('tx-id').value;
     const valStr = document.getElementById('field-valor').value.replace(/\D/g,'');
     const amount = valStr ? Number(valStr)/100 : 0;
-    
-    // Dados base do formulário
+    if(amount === 0) return alert("Valor zerado!");
+
+    // Dados Base
+    const type = document.getElementById('field-tipo').value;
+    const statusInicial = document.getElementById('field-status').value;
     const baseData = {
         user_id: currentUser.uid,
-        type: document.getElementById('field-tipo').value,
+        type: type,
         category: document.getElementById('field-categoria').value || 'Geral',
         description: document.getElementById('field-desc').value || 'Sem descrição',
-        status: document.getElementById('field-status').value,
+        // Nota: O status será definido dinamicamente abaixo
     };
 
     const recurrence = document.getElementById('field-recurrence').value;
     const baseDate = document.getElementById('field-data').value;
-
-    // Função auxiliar para adicionar meses
-    const addMonths = (date, months) => {
-        const d = new Date(date);
-        d.setMonth(d.getMonth() + months);
-        return d.toISOString().split('T')[0];
-    };
+    const intervalType = document.getElementById('recurrence-interval').value;
 
     document.getElementById('btn-save').textContent = "Salvando...";
 
     try {
         if (id) {
-            // Edição (Não gera parcelas, edita só o atual)
-            await updateDoc(doc(db, "transactions", id), { ...baseData, amount: amount, date: baseDate });
+            // Edição simples (sem gerar novas parcelas)
+            await updateDoc(doc(db, "transactions", id), { ...baseData, amount: amount, date: baseDate, status: statusInicial });
         } else {
-            // Novo Lançamento (Verifica Recorrência)
+            // Novo Lançamento
             if (recurrence === 'parcel') {
+                // Lógica de Parcelamento (Valor Total / Qtd)
                 const count = parseInt(document.getElementById('recurrence-count').value) || 1;
-                const parcelValue = Math.floor((amount / count) * 100) / 100; // Valor base
-                const remainder = Math.round((amount - (parcelValue * count)) * 100) / 100; // Diferença de centavos
-
-                const batchPromises = [];
+                const parcelValue = Math.floor((amount / count) * 100) / 100;
+                const remainder = Math.round((amount - (parcelValue * count)) * 100) / 100;
                 
+                const batchPromises = [];
                 for (let i = 0; i < count; i++) {
-                    // Ajusta o valor da última parcela com os centavos restantes
                     const finalValue = (i === count - 1) ? (parcelValue + remainder) : parcelValue;
                     
+                    // SE a 1ª foi marcada como "Pago", ela entra paga.
+                    // As próximas (futuras) entram sempre como "Pendente".
+                    const currentStatus = (i === 0) ? statusInicial : 'pendente';
+
                     const data = {
                         ...baseData,
                         amount: Number(finalValue.toFixed(2)),
-                        date: addMonths(baseDate, i),
-                        description: `${baseData.description} (${i+1}/${count})`, // Ex: Netflix (1/3)
+                        date: addInterval(baseDate, intervalType, i),
+                        description: `${baseData.description} (${i+1}/${count})`,
+                        status: currentStatus, // Status inteligente
                         recurrence: 'parcel'
                     };
                     batchPromises.push(addDoc(collection(db, "transactions"), data));
@@ -542,13 +599,18 @@ document.getElementById('form').onsubmit = async (e) => {
                 await Promise.all(batchPromises);
 
             } else if (recurrence === 'fixed_monthly') {
-                const count = parseInt(document.getElementById('recurrence-count').value) || 12; // Padrão 12 meses se não informar
+                // Lógica Recorrente (Valor Fixo repetido)
+                const count = parseInt(document.getElementById('recurrence-count').value) || 12;
                 const batchPromises = [];
                 for (let i = 0; i < count; i++) {
+                    // Mesma lógica de status: só a primeira respeita o input, o resto é pendente
+                    const currentStatus = (i === 0) ? statusInicial : 'pendente';
+
                     const data = {
                         ...baseData,
                         amount: amount,
-                        date: addMonths(baseDate, i),
+                        date: addInterval(baseDate, intervalType, i),
+                        status: currentStatus,
                         recurrence: 'fixed_monthly'
                     };
                     batchPromises.push(addDoc(collection(db, "transactions"), data));
@@ -556,8 +618,8 @@ document.getElementById('form').onsubmit = async (e) => {
                 await Promise.all(batchPromises);
 
             } else {
-                // Lançamento Único
-                await addDoc(collection(db, "transactions"), { ...baseData, amount: amount, date: baseDate, recurrence: 'none' });
+                // Único
+                await addDoc(collection(db, "transactions"), { ...baseData, amount: amount, date: baseDate, status: statusInicial, recurrence: 'none' });
             }
         }
         
@@ -572,11 +634,29 @@ document.getElementById('form').onsubmit = async (e) => {
     }
 };
 
-// Helpers UI
+// --- HELPERS UI ---
 const fVal = document.getElementById('field-valor');
 fVal.addEventListener('input', (e)=>{ let v = e.target.value.replace(/\D/g,''); if(!v) return; e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); });
+
 const fieldRecurrence = document.getElementById('field-recurrence');
-fieldRecurrence.onchange = ()=>{ if(fieldRecurrence.value !== 'none') document.getElementById('recurrence-details').classList.remove('hidden'); else document.getElementById('recurrence-details').classList.add('hidden'); };
+const recurrenceInterval = document.getElementById('recurrence-interval');
+
+fieldRecurrence.onchange = ()=>{
+  const details = document.getElementById('recurrence-details');
+  if(fieldRecurrence.value !== 'none') {
+      details.classList.remove('hidden');
+  } else {
+      details.classList.add('hidden');
+  }
+};
+
+// Mostrar campo de dias personalizados
+recurrenceInterval.onchange = () => {
+    const customDiv = document.getElementById('custom-days-container');
+    if(recurrenceInterval.value === 'custom') customDiv.classList.remove('hidden');
+    else customDiv.classList.add('hidden');
+};
+
 document.getElementById('fab-add').onclick = () => { document.getElementById('form').reset(); document.getElementById('tx-id').value = ''; document.getElementById('field-data').value = new Date().toISOString().split('T')[0]; document.getElementById('modal').classList.remove('hidden'); };
 document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').classList.add('hidden');
 document.getElementById('btn-refresh-all').onclick = initData;
