@@ -480,3 +480,51 @@ document.getElementById('btn-generate-pdf').onclick = () => {
 document.getElementById('btn-generate-csv').onclick = () => {
     const txs = getExtratoData();
     if(txs.length === 0) return alert("Nada para exportar");
+    let csv = "Data,Descricao,Categoria,Tipo,Valor,Status\n";
+    txs.forEach(t => { csv += `${t.date},"${t.description}",${t.category},${t.type},${t.amount},${t.status}\n`; });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = 'extrato.csv'; a.click();
+};
+
+window.editTx = (id) => {
+    const t = transactions.find(x=>x.id===id); if(!t) return;
+    document.getElementById('tx-id').value = id;
+    document.getElementById('field-valor').value = fmt(t.amount);
+    document.getElementById('field-tipo').value = t.type;
+    document.getElementById('field-data').value = t.date;
+    document.getElementById('field-desc').value = t.description;
+    document.getElementById('field-categoria').value = t.category;
+    document.getElementById('field-status').value = t.status;
+    document.getElementById('modal').classList.remove('hidden');
+};
+window.delTx = async (id) => { if(confirm("Apagar?")) { await deleteDoc(doc(db, "transactions", id)); await fetchTransactions(); renderAll(); } };
+window.baixaTx = async (id) => { if(confirm("Baixar?")) { await updateDoc(doc(db, "transactions", id), { status: 'efetivado' }); await fetchTransactions(); renderAll(); } };
+
+document.getElementById('form').onsubmit = async (e) => {
+    e.preventDefault();
+    if(!currentUser) return;
+    const id = document.getElementById('tx-id').value;
+    const valStr = document.getElementById('field-valor').value.replace(/\D/g,'');
+    const amount = valStr ? Number(valStr)/100 : 0;
+    const data = { user_id: currentUser.uid, amount: amount, type: document.getElementById('field-tipo').value, date: document.getElementById('field-data').value, category: document.getElementById('field-categoria').value, description: document.getElementById('field-desc').value, status: document.getElementById('field-status').value, recurrence: document.getElementById('field-recurrence').value };
+    try { if(id) await updateDoc(doc(db, "transactions", id), data); else await addDoc(collection(db, "transactions"), data); document.getElementById('modal').classList.add('hidden'); await fetchTransactions(); renderAll(); } catch (e) { alert("Erro: " + e.message); }
+};
+
+const fVal = document.getElementById('field-valor');
+fVal.addEventListener('input', (e)=>{ let v = e.target.value.replace(/\D/g,''); if(!v) return; e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); });
+const fieldRecurrence = document.getElementById('field-recurrence');
+fieldRecurrence.onchange = ()=>{ if(fieldRecurrence.value !== 'none') document.getElementById('recurrence-details').classList.remove('hidden'); else document.getElementById('recurrence-details').classList.add('hidden'); };
+document.getElementById('fab-add').onclick = () => { document.getElementById('form').reset(); document.getElementById('tx-id').value = ''; document.getElementById('field-data').value = new Date().toISOString().split('T')[0]; document.getElementById('modal').classList.remove('hidden'); };
+document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').classList.add('hidden');
+document.getElementById('btn-refresh-all').onclick = initData;
+
+const ym = new Date().toISOString().slice(0,7);
+['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => { const el = document.getElementById(id); if(el) { el.value = ym; el.onchange = renderAll; } });
+
+async function initData() { await fetchTransactions(); renderAll(); }
+function renderAll() { renderDashboard(); renderTable(); renderFuturas(); renderExtratoPreview(); }
+
+</script>
+</body>
+</html>
