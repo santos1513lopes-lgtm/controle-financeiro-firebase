@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Controle Financeiro - Firebase v33 (Google)</title>
+  <title>Controle Financeiro - Firebase v35 (Privado)</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -15,7 +15,12 @@
     tailwind.config = {
       darkMode: 'class',
       theme: {
-        extend: { colors: { darkbg: '#0f172a', darkcard: '#1e293b' } }
+        extend: {
+          colors: {
+            darkbg: '#0f172a',
+            darkcard: '#1e293b',
+          }
+        }
       }
     }
   </script>
@@ -33,11 +38,8 @@
     .btn { padding:10px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
     .btn.secondary { background:#64748b; }
     .btn.danger { background:#ef4444; }
-    .btn.google { background: #fff; color: #374151; border: 1px solid #e5e7eb; } /* Estilo Google */
-    .btn.google:hover { background: #f9fafb; }
-    
-    .btn-dark-toggle { background: transparent; border: 1px solid #4b5563; color: #4b5563; }
-    .dark .btn-dark-toggle { color: #cbd5e1; border-color: #cbd5e1; }
+    .btn.dark-toggle { background: transparent; border: 1px solid #4b5563; color: #4b5563; }
+    .dark .btn.dark-toggle { color: #cbd5e1; border-color: #cbd5e1; }
 
     .truncate-text { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
     input, select, textarea { padding:10px; border-radius:8px; border:1px solid #e5e7eb; width: 100%; font-size: 16px; outline: none; transition: all 0.3s ease; }
@@ -81,16 +83,10 @@
                 <input id="email" placeholder="E-mail" class="p-2 border rounded w-full mb-0" />
                 <input id="password" type="password" placeholder="Senha" class="p-2 border rounded w-full mb-0" />
                 
-                <div class="flex gap-2">
-                    <button id="btn-login" class="btn w-full">Entrar</button>
-                    <button id="btn-signup" class="btn secondary w-full">Criar</button>
-                </div>
-
-                <button id="btn-google" class="btn google w-full">
-                    <i class="fab fa-google text-red-600"></i> Entrar com Google
-                </button>
+                <button id="btn-login" class="btn w-full">Entrar</button>
                 
                 <div id="auth-msg" class="text-xs text-center text-red-500"></div>
+                <div class="text-xs text-center text-gray-400 mt-1">Acesso restrito a autorizados.</div>
             </div>
         </div>
 
@@ -223,10 +219,9 @@
   </div>
 
 <script type="module">
-// IMPORTAÇÕES GOOGLE LOGIN
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, GoogleAuthProvider, signInWithPopup } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyC5aGRF1qU1rhfi7jHZywy5NNaPr6lJfvo",
@@ -240,7 +235,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
 
 let currentUser = null;
 let transactions = [];
@@ -282,19 +276,6 @@ onAuthStateChanged(auth, (user) => {
 });
 
 document.getElementById('btn-login').onclick = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } catch (e) { authMsg.textContent = "Erro: " + e.message; } };
-document.getElementById('btn-signup').onclick = async () => { try { await createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); alert("Conta criada!"); } catch (e) { authMsg.textContent = "Erro: " + e.message; } };
-
-// GOOGLE LOGIN LOGIC
-document.getElementById('btn-google').onclick = async () => {
-    try {
-        await signInWithPopup(auth, googleProvider);
-        // Sucesso é tratado pelo onAuthStateChanged
-    } catch (e) {
-        authMsg.textContent = "Erro Google: " + e.message;
-        console.error(e);
-    }
-};
-
 document.getElementById('btn-logout').onclick = async () => { await signOut(auth); window.location.reload(); };
 
 document.getElementById('btn-wipe-data').onclick = async () => {
