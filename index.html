@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Controle Financeiro - Firebase v21 (Visual Final)</title>
+  <title>Controle Financeiro - Firebase v22 (Filtros Completos)</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -22,21 +22,18 @@
     .btn { padding:8px 12px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
     .btn.secondary { background:#6b7280; }
     
-    /* Botões da Tabela (Pequenos e Coloridos) */
+    /* Botões da Tabela */
     .btn-table-edit { background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-right: 4px; }
     .btn-table-del { background-color: #ef4444; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
-    .btn-table-edit:hover { background-color: #2563eb; }
-    .btn-table-del:hover { background-color: #dc2626; }
-
+    .btn-table-baixa { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; width: 100%; } /* Botão Baixar Verde */
+    
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }
     input[type="month"], input, select, textarea { padding:8px; border-radius:6px; border:1px solid #e5e7eb; width: 100%; }
     
-    /* Cores */
+    /* Cores e Texto */
     .text-green-600 { color: #16a34a !important; font-weight: 700; }
     .text-red-600 { color: #dc2626 !important; font-weight: 700; }
-    
-    /* Utilitário para cortar texto longo */
-    .truncate-text { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .truncate-text { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   </style>
 </head>
 <body>
@@ -45,7 +42,7 @@
     <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
       <div>
         <h1 class="text-2xl font-bold text-gray-800">Finanças Firebase 🔥</h1>
-        <p class="text-sm muted">Sistema de Gestão Financeira v21</p>
+        <p class="text-sm muted">Sistema de Gestão Financeira v22</p>
       </div>
       
       <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
@@ -131,7 +128,8 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table style="min-width: 800px;"> <thead>
+                    <table style="min-width: 800px;">
+                        <thead>
                             <tr>
                                 <th style="width: 100px;">Data</th>
                                 <th>Descrição</th>
@@ -148,13 +146,39 @@
             </section>
 
             <section id="futuras" class="card hidden">
-                <div class="mb-4 flex justify-between items-center">
-                    <div><label class="small muted">Mês</label><input id="futuras-month" type="month" /></div>
-                    <div><button id="btn-refresh-fut" class="btn">Atualizar</button></div>
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+                    <div class="flex gap-2 items-end w-full md:w-auto">
+                        <div><label class="small muted">Mês</label><input id="futuras-month" type="month" /></div>
+                        <div>
+                            <label class="small muted">Tipo</label>
+                            <select id="futuras-type">
+                                <option value="todos">Todos</option>
+                                <option value="entrada">Receitas</option>
+                                <option value="saida">Dívidas</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="w-full md:w-auto">
+                        <label class="small muted">Buscar</label>
+                        <input id="futuras-search" placeholder="Pesquisar conta..." />
+                    </div>
+                    <div class="w-full md:w-auto flex items-end">
+                        <button id="btn-refresh-fut" class="btn w-full">Atualizar</button>
+                    </div>
                 </div>
+
                 <div class="overflow-x-auto">
-                    <table>
-                        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th class="text-right">Valor</th><th>Ações</th></tr></thead>
+                    <table style="min-width: 800px;">
+                        <thead>
+                            <tr>
+                                <th style="width: 100px;">Data</th>
+                                <th>Descrição</th>
+                                <th>Categoria</th>
+                                <th>Tipo</th>
+                                <th class="text-right">Valor</th>
+                                <th class="text-center" style="width: 120px;">Ação</th>
+                            </tr>
+                        </thead>
                         <tbody id="futuras-tbody"><tr><td colspan="6" class="text-center muted py-8">Sem dados</td></tr></tbody>
                     </table>
                 </div>
@@ -236,7 +260,7 @@ const auth = getAuth(app);
 let currentUser = null;
 let transactions = [];
 
-// DOM Elements
+// DOM
 const appContent = document.getElementById('app-content');
 const loginForm = document.getElementById('login-form');
 const userInfo = document.getElementById('user-info');
@@ -297,7 +321,7 @@ async function fetchTransactions() {
     return transactions;
 }
 
-// --- RENDER ---
+// --- RENDER HELPERS ---
 function applyColor(el, val, type) {
     if(!el) return;
     el.className = el.className.replace(/text-(green|red)-600/g, '');
@@ -311,6 +335,7 @@ function applyColor(el, val, type) {
 function fmt(v) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 function formatDate(d) { if(!d) return ''; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
 
+// --- DASHBOARD ---
 function renderDashboard() {
     const m = document.getElementById('dash-month').value;
     const txs = transactions.filter(t => t.date.startsWith(m));
@@ -333,6 +358,7 @@ function renderDashboard() {
     const elFut = document.getElementById('previsao-futura'); elFut.textContent = fmt(futura); applyColor(elFut, futura);
 }
 
+// --- TRANSAÇÕES (COM FILTRO) ---
 function renderTable() {
     const m = document.getElementById('trans-month').value;
     const tipoFiltro = document.getElementById('trans-type').value;
@@ -340,7 +366,6 @@ function renderTable() {
     const tbody = document.getElementById('trans-tbody');
     tbody.innerHTML = '';
     
-    // FILTRAGEM CORRIGIDA
     const txs = transactions.filter(t => {
         const dataMes = t.date.startsWith(m);
         const matchTipo = tipoFiltro === 'todos' ? true : t.type === tipoFiltro;
@@ -357,7 +382,6 @@ function renderTable() {
         const colorClass = isRec ? 'text-green-600' : 'text-red-600';
         const sign = isRec ? '+' : '-';
         
-        // LAYOUT ARRUMADO: Descrição cortada e Botões lado a lado
         tr.innerHTML = `
             <td class="whitespace-nowrap">${formatDate(t.date)}</td>
             <td class="truncate-text" title="${t.description}">${t.description}</td>
@@ -379,30 +403,57 @@ function renderTable() {
     document.querySelectorAll('.btn-table-edit').forEach(b => b.onclick = () => openEdit(b.dataset.id));
 }
 
-// EVENT LISTENERS PARA BUSCA AUTOMÁTICA
+// Auto-update Transações
 document.getElementById('trans-type').addEventListener('change', renderTable);
 document.getElementById('trans-search').addEventListener('input', renderTable);
 document.getElementById('trans-month').addEventListener('change', renderTable);
 
+// --- FUTURAS (AGORA COM FILTRO IGUAL) ---
 function renderFuturas(){
     const m = document.getElementById('futuras-month').value;
+    const tipoFiltro = document.getElementById('futuras-type').value; // Novo Filtro
+    const busca = (document.getElementById('futuras-search').value || '').toLowerCase(); // Nova Busca
     const tbody = document.getElementById('futuras-tbody');
     tbody.innerHTML = '';
-    const txs = transactions.filter(t => t.status === 'pendente' && t.date.startsWith(m));
+    
+    const txs = transactions.filter(t => {
+        const isPendente = t.status === 'pendente';
+        const dataMes = t.date.startsWith(m);
+        const matchTipo = tipoFiltro === 'todos' ? true : t.type === tipoFiltro;
+        const texto = (t.description + ' ' + t.category).toLowerCase();
+        const matchBusca = texto.includes(busca);
+        
+        return isPendente && dataMes && matchTipo && matchBusca;
+    });
+
     if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center muted">Sem pendências.</td></tr>'; return; }
+    
     txs.forEach(t => {
         const tr = document.createElement('tr');
-        const colorClass = t.type === 'entrada' ? 'text-green-600' : 'text-red-600';
-        tr.innerHTML = `<td>${formatDate(t.date)}</td><td>${t.description}</td><td>${t.category}</td><td>${t.type}</td><td class="text-right font-bold ${colorClass}">${fmt(t.amount)}</td><td><button class="btn-baixa btn" data-id="${t.id}">Baixar</button></td>`;
+        const cssClass = t.type === 'entrada' ? 'text-green-600' : 'text-red-600';
+        tr.innerHTML = `
+            <td class="whitespace-nowrap">${formatDate(t.date)}</td>
+            <td class="truncate-text" title="${t.description}">${t.description}</td>
+            <td>${t.category}</td>
+            <td>${t.type === 'entrada' ? 'Receita' : 'Dívida'}</td>
+            <td class="text-right font-bold ${cssClass}">${fmt(t.amount)}</td>
+            <td class="text-center"><button class="btn-table-baixa" data-id="${t.id}">Baixar</button></td>
+        `;
         tbody.appendChild(tr);
     });
-    document.querySelectorAll('.btn-baixa').forEach(b => b.onclick = async () => {
+    document.querySelectorAll('.btn-table-baixa').forEach(b => b.onclick = async () => {
         if(!confirm("Baixar?")) return;
         await updateDoc(doc(db, "transactions", b.dataset.id), { status: 'efetivado' });
         await fetchTransactions(); renderAll();
     });
 }
 
+// Auto-update Futuras
+document.getElementById('futuras-type').addEventListener('change', renderFuturas);
+document.getElementById('futuras-search').addEventListener('input', renderFuturas);
+document.getElementById('futuras-month').addEventListener('change', renderFuturas);
+
+// --- EXTRATO ---
 function renderExtratoPreview(){
     const m = document.getElementById('extrato-month').value;
     const list = document.getElementById('extrato-list');
