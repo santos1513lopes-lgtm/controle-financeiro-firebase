@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Controle Financeiro - Firebase v31 (Dark Mode)</title>
+  <title>Controle Financeiro - Firebase v32</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -17,8 +17,8 @@
       theme: {
         extend: {
           colors: {
-            darkbg: '#0f172a', // Fundo bem escuro
-            darkcard: '#1e293b', // Cartões levemente mais claros
+            darkbg: '#0f172a',
+            darkcard: '#1e293b',
           }
         }
       }
@@ -27,38 +27,25 @@
   
   <style>
     body { font-family: Inter, system-ui, -apple-system, sans-serif; padding-bottom: 80px; transition: background-color 0.3s; }
-    
-    /* Transições suaves para o tema */
-    .card, input, select, textarea, body { transition: all 0.3s ease; }
-
-    /* Estilos Base */
-    .card { border-radius:12px; padding:16px; box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom:14px; }
-    
-    /* Botão Flutuante */
+    .card { border-radius:12px; padding:16px; box-shadow:0 4px 12px rgba(0,0,0,0.05); margin-bottom:14px; transition: all 0.3s ease; }
     .fab { position:fixed; right:20px; bottom:80px; background:#f59e0b; color:#fff; width:56px; height:56px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:24px; cursor:pointer; box-shadow:0 4px 15px rgba(245,158,11,0.4); z-index: 40; }
-    
     .hidden { display:none !important; }
     table { width:100%; border-collapse:collapse; }
     th, td { padding:12px 8px; border-bottom:1px solid #e5e7eb; text-align:left; vertical-align: middle; font-size: 14px; }
-    
-    /* Modo Escuro para Tabela */
     .dark th, .dark td { border-bottom-color: #334155; }
     
-    .btn { padding:8px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
-    .btn.secondary { background:#6b7280; }
+    /* Botões */
+    .btn { padding:8px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; display: inline-flex; align-items: center; gap: 6px; justify-content: center; }
+    .btn.secondary { background:#64748b; }
     .btn.danger { background:#ef4444; }
-    .btn.dark-toggle { background:#3b82f6; }
-    
-    .truncate-text { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
-    
-    input, select, textarea { padding:10px; border-radius:8px; border:1px solid #e5e7eb; width: 100%; font-size: 16px; outline: none; }
-    /* Inputs no Dark Mode */
-    .dark input, .dark select, .dark textarea { background-color: #334155; border-color: #475569; color: #f1f5f9; }
+    .btn-icon { padding: 8px; border-radius: 50%; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
 
+    .truncate-text { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+    input, select, textarea { padding:10px; border-radius:8px; border:1px solid #e5e7eb; width: 100%; font-size: 16px; outline: none; transition: all 0.3s ease; }
+    .dark input, .dark select, .dark textarea { background-color: #334155; border-color: #475569; color: #f1f5f9; }
+    
     .text-green-600 { color: #16a34a !important; font-weight: 700; }
     .text-red-600 { color: #dc2626 !important; font-weight: 700; }
-    
-    /* Cores mais claras para o Dark Mode */
     .dark .text-green-600 { color: #4ade80 !important; }
     .dark .text-red-600 { color: #f87171 !important; }
     .dark .muted { color: #94a3b8 !important; }
@@ -66,14 +53,12 @@
     .dark .text-gray-500 { color: #cbd5e1 !important; }
 
     .chart-container { position: relative; height: 250px; width: 100%; display: flex; justify-content: center; }
-    
     .mobile-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid #e5e7eb; display: flex; justify-content: space-around; padding: 10px 0; z-index: 50; }
     .dark .mobile-nav { background-color: #1e293b; border-top-color: #334155; }
-    
     .nav-item { display: flex; flex-direction: column; align-items: center; color: #9ca3af; font-size: 10px; background: none; border: none; }
     .nav-item.active { color: #f59e0b; font-weight: bold; }
     .nav-item i { font-size: 20px; margin-bottom: 4px; }
-
+    
     @media (max-width: 768px) { .desktop-nav { display: none; } .fab { bottom: 80px; } }
     @media (min-width: 769px) { .mobile-nav { display: none; } .desktop-nav { display: flex; } .fab { bottom: 30px; } }
   </style>
@@ -82,13 +67,18 @@
   <div class="max-w-6xl mx-auto p-4 md:p-6">
     
     <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
-      <div class="text-center md:text-left w-full">
-        <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Finanças <span class="text-yellow-500">🔥</span></h1>
-        <div id="user-email" class="text-xs text-gray-500 dark:text-gray-400 font-mono">Carregando...</div>
+      <div class="flex items-center justify-between w-full md:w-auto gap-4">
+        <div>
+          <h1 class="text-2xl font-bold text-gray-800 dark:text-white">Finanças <span class="text-yellow-500">🔥</span></h1>
+          <div id="user-display" class="hidden flex items-center gap-2 mt-1">
+             <span id="user-email" class="text-xs text-gray-500 dark:text-gray-400 font-mono">Carregando...</span>
+             <button id="btn-theme" class="text-gray-400 hover:text-yellow-500 dark:text-gray-500 dark:hover:text-yellow-300 transition-colors"><i class="fas fa-moon"></i></button>
+          </div>
+        </div>
       </div>
       
       <div id="auth-area" class="w-full md:w-auto">
-        <div id="login-form" class="card bg-white dark:bg-darkcard p-4">
+        <div id="login-form" class="card bg-white dark:bg-darkcard p-4 mb-0">
             <div class="flex flex-col gap-2">
                 <input id="email" placeholder="E-mail" class="p-2 border rounded w-full" />
                 <input id="password" type="password" placeholder="Senha" class="p-2 border rounded w-full" />
@@ -97,11 +87,10 @@
             </div>
         </div>
 
-        <div id="user-actions" class="hidden flex gap-2 justify-center flex-wrap">
-            <button id="btn-theme" class="btn dark-toggle text-xs w-10 h-10 rounded-full flex items-center justify-center"><i class="fas fa-moon"></i></button>
-            <button id="btn-refresh-all" class="btn secondary text-xs"><i class="fas fa-sync"></i> Atualizar</button>
-            <button id="btn-wipe-data" class="btn danger text-xs"><i class="fas fa-trash-alt"></i> Zerar</button>
-            <button id="btn-logout" class="btn secondary text-xs">Sair</button>
+        <div id="user-actions" class="hidden flex gap-2 w-full md:w-auto">
+            <button id="btn-refresh-all" class="btn secondary text-xs flex-1 md:flex-none"><i class="fas fa-sync"></i> Atualizar</button>
+            <button id="btn-wipe-data" class="btn danger text-xs flex-1 md:flex-none"><i class="fas fa-trash-alt"></i> Zerar</button>
+            <button id="btn-logout" class="btn secondary text-xs flex-1 md:flex-none"><i class="fas fa-sign-out-alt"></i> Sair</button>
         </div>
       </div>
     </header>
@@ -180,8 +169,8 @@
                         <div><label class="text-xs text-gray-500">Buscar</label><input id="extrato-search" placeholder="Filtrar relatório..." /></div>
                     </div>
                     <div class="flex gap-2">
-                        <button id="btn-generate-pdf" class="btn flex-1 text-center"><i class="fas fa-file-pdf"></i> PDF</button>
-                        <button id="btn-generate-csv" class="btn secondary flex-1 text-center"><i class="fas fa-file-csv"></i> CSV</button>
+                        <button id="btn-generate-pdf" class="btn flex-1 text-center"><i class="fas fa-file-pdf"></i> Baixar PDF</button>
+                        <button id="btn-generate-csv" class="btn secondary flex-1 text-center"><i class="fas fa-file-csv"></i> Baixar CSV</button>
                     </div>
                 </div>
                 <div id="extrato-preview" class="card overflow-x-auto bg-gray-50 dark:bg-gray-800"><div class="text-xs font-bold uppercase text-gray-500 mb-2 border-b dark:border-gray-600 pb-1">Pré-visualização</div><div id="extrato-list">Selecione os filtros</div></div>
@@ -283,33 +272,19 @@ let currentUser = null;
 let transactions = [];
 let chartInstance = null;
 
-// --- DARK MODE LOGIC ---
 const btnTheme = document.getElementById('btn-theme');
 const htmlEl = document.documentElement;
-
-// Carregar tema salvo
-if (localStorage.getItem('theme') === 'dark') {
-    htmlEl.classList.add('dark');
-    btnTheme.innerHTML = '<i class="fas fa-sun"></i>';
-}
-
+if (localStorage.getItem('theme') === 'dark') { htmlEl.classList.add('dark'); btnTheme.innerHTML = '<i class="fas fa-sun"></i>'; }
 btnTheme.onclick = () => {
-    if (htmlEl.classList.contains('dark')) {
-        htmlEl.classList.remove('dark');
-        localStorage.setItem('theme', 'light');
-        btnTheme.innerHTML = '<i class="fas fa-moon"></i>';
-    } else {
-        htmlEl.classList.add('dark');
-        localStorage.setItem('theme', 'dark');
-        btnTheme.innerHTML = '<i class="fas fa-sun"></i>';
-    }
-    // Recarregar gráfico para ajustar cor das letras
+    if (htmlEl.classList.contains('dark')) { htmlEl.classList.remove('dark'); localStorage.setItem('theme', 'light'); btnTheme.innerHTML = '<i class="fas fa-moon"></i>'; } 
+    else { htmlEl.classList.add('dark'); localStorage.setItem('theme', 'dark'); btnTheme.innerHTML = '<i class="fas fa-sun"></i>'; }
     renderAll(); 
 };
 
 const loginForm = document.getElementById('login-form');
 const userActions = document.getElementById('user-actions');
 const appContent = document.getElementById('app-content');
+const userDisplay = document.getElementById('user-display'); // Novo container
 const userEmailEl = document.getElementById('user-email');
 const authMsg = document.getElementById('auth-msg');
 
@@ -318,6 +293,7 @@ onAuthStateChanged(auth, (user) => {
         currentUser = user;
         loginForm.classList.add('hidden');
         userActions.classList.remove('hidden');
+        userDisplay.classList.remove('hidden'); // Mostra email e tema
         userEmailEl.textContent = user.email.split('@')[0];
         appContent.classList.remove('hidden');
         initData();
@@ -325,7 +301,8 @@ onAuthStateChanged(auth, (user) => {
         currentUser = null;
         loginForm.classList.remove('hidden');
         userActions.classList.add('hidden');
-        userEmailEl.textContent = "Faça login";
+        userDisplay.classList.add('hidden'); // Esconde
+        userEmailEl.textContent = "";
         appContent.classList.add('hidden');
     }
 });
@@ -382,22 +359,16 @@ function renderChart(txs) {
     const ctx = document.getElementById('expenseChart').getContext('2d');
     const expenses = txs.filter(t => t.type === 'saida' && t.status === 'efetivado');
     if(expenses.length === 0) { if(chartInstance) { chartInstance.destroy(); chartInstance = null; } return; }
-    
     const categories = {};
     expenses.forEach(t => { const cat = t.category || 'Outros'; categories[cat] = (categories[cat] || 0) + t.amount; });
-    
-    // Cor da legenda baseada no tema
+    const labels = Object.keys(categories);
+    const data = Object.values(categories);
     const textColor = htmlEl.classList.contains('dark') ? '#cbd5e1' : '#666';
-
     if(chartInstance) chartInstance.destroy();
     chartInstance = new Chart(ctx, {
         type: 'doughnut',
-        data: { labels: Object.keys(categories), datasets: [{ data: Object.values(categories), backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899'], borderWidth: 0 }] },
-        options: { 
-            responsive: true, maintainAspectRatio: false, 
-            plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12, font: { size: 10 } } } }, 
-            cutout: '70%' 
-        }
+        data: { labels: labels, datasets: [{ data: data, backgroundColor: ['#ef4444', '#f59e0b', '#3b82f6', '#10b981', '#8b5cf6', '#ec4899', '#6366f1', '#14b8a6'], borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { color: textColor, boxWidth: 12, font: { size: 10 } } }, tooltip: { callbacks: { label: function(context) { return ' ' + context.label + ': ' + fmt(context.raw); } } } }, cutout: '70%' }
     });
 }
 
@@ -420,11 +391,17 @@ function renderDashboard() {
 
 function renderTable() {
     const m = document.getElementById('trans-month').value;
-    const tipo = document.getElementById('trans-type').value;
+    const tipoFiltro = document.getElementById('trans-type').value;
     const busca = (document.getElementById('trans-search').value || '').toLowerCase();
     const tbody = document.getElementById('trans-tbody');
     tbody.innerHTML = '';
-    const txs = transactions.filter(t => t.date.startsWith(m) && (tipo === 'todos' || t.type === tipo) && (t.description.toLowerCase().includes(busca) || t.category.toLowerCase().includes(busca)));
+    const txs = transactions.filter(t => {
+        const dataMes = t.date.startsWith(m);
+        const matchTipo = tipoFiltro === 'todos' ? true : t.type === tipoFiltro;
+        const texto = (t.description + ' ' + t.category).toLowerCase();
+        const matchBusca = texto.includes(busca);
+        return dataMes && matchTipo && matchBusca;
+    });
     if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-400">Nada.</td></tr>'; return; }
     txs.forEach(t => {
         const tr = document.createElement('tr');
@@ -438,12 +415,19 @@ function renderTable() {
 
 function renderFuturas(){
     const m = document.getElementById('futuras-month').value;
-    const tipo = document.getElementById('futuras-type').value;
+    const tipoFiltro = document.getElementById('futuras-type').value;
     const busca = (document.getElementById('futuras-search').value || '').toLowerCase();
     const tbody = document.getElementById('futuras-tbody');
     tbody.innerHTML = '';
     const hoje = new Date().toISOString().split('T')[0];
-    const txs = transactions.filter(t => t.status === 'pendente' && t.date.startsWith(m) && (tipo === 'todos' || t.type === tipo) && (t.description.toLowerCase().includes(busca)));
+    const txs = transactions.filter(t => {
+        const isPendente = t.status === 'pendente';
+        const dataMes = t.date.startsWith(m);
+        const matchTipo = tipoFiltro === 'todos' ? true : t.type === tipoFiltro;
+        const texto = (t.description + ' ' + t.category).toLowerCase();
+        const matchBusca = texto.includes(busca);
+        return isPendente && dataMes && matchTipo && matchBusca;
+    });
     if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center py-4 text-gray-400">Vazio.</td></tr>'; return; }
     txs.forEach(t => {
         const tr = document.createElement('tr');
@@ -484,57 +468,15 @@ document.getElementById('btn-generate-pdf').onclick = () => {
     doc.text('Extrato Financeiro', 14, 20);
     const body = txs.map(r => [formatDate(r.date), r.description, r.category, r.type, fmt(r.amount)]);
     doc.autoTable({ startY: 30, head: [['Data', 'Descrição', 'Categoria', 'Tipo', 'Valor']], body: body });
+    const rec = txs.filter(t => t.type === 'entrada').reduce((acc, t) => acc + t.amount, 0);
+    const desp = txs.filter(t => t.type === 'saida').reduce((acc, t) => acc + t.amount, 0);
+    const finalY = doc.lastAutoTable.finalY + 10;
+    doc.text(`Receitas: ${fmt(rec)}`, 14, finalY);
+    doc.text(`Despesas: ${fmt(desp)}`, 14, finalY + 6);
+    doc.text(`Saldo: ${fmt(rec - desp)}`, 14, finalY + 12);
     doc.save('extrato.pdf');
 };
 
 document.getElementById('btn-generate-csv').onclick = () => {
     const txs = getExtratoData();
     if(txs.length === 0) return alert("Nada para exportar");
-    let csv = "Data,Descricao,Categoria,Tipo,Valor,Status\n";
-    txs.forEach(t => { csv += `${t.date},"${t.description}",${t.category},${t.type},${t.amount},${t.status}\n`; });
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'extrato.csv'; a.click();
-};
-
-window.editTx = (id) => {
-    const t = transactions.find(x=>x.id===id); if(!t) return;
-    document.getElementById('tx-id').value = id;
-    document.getElementById('field-valor').value = fmt(t.amount);
-    document.getElementById('field-tipo').value = t.type;
-    document.getElementById('field-data').value = t.date;
-    document.getElementById('field-desc').value = t.description;
-    document.getElementById('field-categoria').value = t.category;
-    document.getElementById('field-status').value = t.status;
-    document.getElementById('modal').classList.remove('hidden');
-};
-window.delTx = async (id) => { if(confirm("Apagar?")) { await deleteDoc(doc(db, "transactions", id)); await fetchTransactions(); renderAll(); } };
-window.baixaTx = async (id) => { if(confirm("Baixar?")) { await updateDoc(doc(db, "transactions", id), { status: 'efetivado' }); await fetchTransactions(); renderAll(); } };
-
-document.getElementById('form').onsubmit = async (e) => {
-    e.preventDefault();
-    if(!currentUser) return;
-    const id = document.getElementById('tx-id').value;
-    const valStr = document.getElementById('field-valor').value.replace(/\D/g,'');
-    const amount = valStr ? Number(valStr)/100 : 0;
-    const data = { user_id: currentUser.uid, amount: amount, type: document.getElementById('field-tipo').value, date: document.getElementById('field-data').value, category: document.getElementById('field-categoria').value, description: document.getElementById('field-desc').value, status: document.getElementById('field-status').value, recurrence: document.getElementById('field-recurrence').value };
-    try { if(id) await updateDoc(doc(db, "transactions", id), data); else await addDoc(collection(db, "transactions"), data); document.getElementById('modal').classList.add('hidden'); await fetchTransactions(); renderAll(); } catch (e) { alert("Erro: " + e.message); }
-};
-
-const fVal = document.getElementById('field-valor');
-fVal.addEventListener('input', (e)=>{ let v = e.target.value.replace(/\D/g,''); if(!v) return; e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); });
-const fieldRecurrence = document.getElementById('field-recurrence');
-fieldRecurrence.onchange = ()=>{ if(fieldRecurrence.value !== 'none') document.getElementById('recurrence-details').classList.remove('hidden'); else document.getElementById('recurrence-details').classList.add('hidden'); };
-document.getElementById('fab-add').onclick = () => { document.getElementById('form').reset(); document.getElementById('tx-id').value = ''; document.getElementById('field-data').value = new Date().toISOString().split('T')[0]; document.getElementById('modal').classList.remove('hidden'); };
-document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').classList.add('hidden');
-document.getElementById('btn-refresh-all').onclick = initData;
-
-const ym = new Date().toISOString().slice(0,7);
-['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => { const el = document.getElementById(id); if(el) { el.value = ym; el.onchange = renderAll; } });
-
-async function initData() { await fetchTransactions(); renderAll(); }
-function renderAll() { renderDashboard(); renderTable(); renderFuturas(); renderExtratoPreview(); }
-
-</script>
-</body>
-</html>
