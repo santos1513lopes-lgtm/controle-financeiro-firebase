@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Controle Financeiro - Firebase v1</title>
+  <title>Controle Financeiro - Firebase v14</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -12,17 +12,19 @@
   <style>
     body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f8fafc; padding-bottom: 80px; }
     .card { background:#fff;border-radius:10px;padding:16px;box-shadow:0 4px 12px rgba(0,0,0,0.05);margin-bottom:14px; }
-    .fab { position:fixed; right:20px; bottom:20px; background:#f59e0b; /* Cor Laranja para diferenciar que é Firebase */ color:#fff; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px; cursor:pointer; box-shadow:0 4px 15px rgba(245,158,11,0.3); z-index: 50; transition: transform 0.1s; }
+    .fab { position:fixed; right:20px; bottom:20px; background:#f59e0b; color:#fff; width:60px; height:60px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:32px; cursor:pointer; box-shadow:0 4px 15px rgba(245,158,11,0.3); z-index: 50; transition: transform 0.1s; }
     .fab:active { transform: scale(0.95); }
     .hidden { display:none; }
     table { width:100%; border-collapse:collapse; min-width: 600px; }
     th, td { padding:12px 8px; border-bottom:1px solid #f1f5f9; text-align:left; font-size: 14px; }
     .muted { color:#6b7280; }
-    .btn { padding:10px 16px; border-radius:8px; background:#f59e0b; /* Laranja */ color:#fff; border:none; cursor:pointer; font-size: 14px; white-space: nowrap; }
+    .btn { padding:10px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-size: 14px; white-space: nowrap; }
     .btn.secondary { background:#6b7280; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }
     input[type="month"], select, input, textarea { padding:10px; border-radius:6px; border:1px solid #e5e7eb; width: 100%; }
     .font-bold { font-weight: 700; }
+    
+    /* CORES DEFINITIVAS */
     .text-green { color: #16a34a; }
     .text-red { color: #dc2626; }
   </style>
@@ -164,14 +166,14 @@
   </div>
 
 <script type="module">
-// --- IMPORTAÇÕES FIREBASE (MODERNAS) ---
+// --- IMPORTAÇÕES FIREBASE VIA CDN (NECESSÁRIO PARA NAVEGADOR) ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-// --- SUA CONFIGURAÇÃO (Copiada do Print) ---
+// --- SUAS CHAVES CORRETAS ---
 const firebaseConfig = {
-  apiKey: "AIzaSyC5aGRF1qU1rhfi7jhZywy5NNaPr6lJfvo",
+  apiKey: "AIzaSyC5aGRF1qU1rhfi7jHZywy5NNaPr6lJfvo",
   authDomain: "controlefinanceirov1-c2b59.firebaseapp.com",
   projectId: "controlefinanceirov1-c2b59",
   storageBucket: "controlefinanceirov1-c2b59.firebasestorage.app",
@@ -184,11 +186,11 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const auth = getAuth(app);
 
-// VARIÁVEIS GLOBAIS
+// VARIÁVEIS
 let currentUser = null;
 let transactions = [];
 
-// ELEMENTOS DOM
+// DOM
 const appContent = document.getElementById('app-content');
 const loginForm = document.getElementById('login-form');
 const userInfo = document.getElementById('user-info');
@@ -200,7 +202,19 @@ const authMsg = document.getElementById('auth-msg');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 
-// --- AUTENTICAÇÃO (FIREBASE) ---
+// Color Helper
+function applyColor(el, val, type=null){
+  if(!el) return;
+  el.classList.remove('text-green', 'text-red');
+  if(type === 'entrada') el.classList.add('text-green');
+  else if(type === 'saida') el.classList.add('text-red');
+  else {
+    if(val >= 0) el.classList.add('text-green');
+    else el.classList.add('text-red');
+  }
+}
+
+// --- AUTH LOGIC ---
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
@@ -220,30 +234,28 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-// Botões de Login
 btnLogin.onclick = async () => {
     try {
         await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
         authMsg.textContent = "";
-    } catch (e) { authMsg.textContent = "Erro ao entrar: " + e.message; }
+    } catch (e) { authMsg.textContent = "Erro: " + e.message; }
 };
 
 btnSignup.onclick = async () => {
     try {
         await createUserWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
         authMsg.textContent = "";
+        alert("Conta criada! Você já está logado.");
     } catch (e) { authMsg.textContent = "Erro ao criar: " + e.message; }
 };
 
 btnLogout.onclick = async () => { await signOut(auth); };
 
-// --- LÓGICA DO SISTEMA (ADAPTADA PARA FIREBASE) ---
+// --- LÓGICA DO SISTEMA ---
 
-// Fetch
 async function fetchTransactions() {
     if(!currentUser) return;
-    // Consulta no Firestore: Coleção 'transactions', onde user_id == id do usuário, ordenado por data
-    // Nota: Firestore precisa de índice para orderBy complexo, vamos simplificar pegando tudo e ordenando no JS por enquanto
+    // Pega todas as transações do usuário
     const q = query(collection(db, "transactions"), where("user_id", "==", currentUser.uid));
     const querySnapshot = await getDocs(q);
     
@@ -251,12 +263,12 @@ async function fetchTransactions() {
     querySnapshot.forEach((doc) => {
         transactions.push({ id: doc.id, ...doc.data() });
     });
-    // Ordenação no cliente para evitar erro de índice do Firestore no início
+    // Ordena por data (decrescente)
     transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
     return transactions;
 }
 
-// Salvar (Adicionar ou Editar)
+// Salvar
 document.getElementById('form').onsubmit = async (e) => {
     e.preventDefault();
     if(!currentUser) return;
@@ -278,10 +290,8 @@ document.getElementById('form').onsubmit = async (e) => {
 
     try {
         if(id) {
-            // Editar
             await updateDoc(doc(db, "transactions", id), data);
         } else {
-            // Adicionar
             await addDoc(collection(db, "transactions"), data);
         }
         document.getElementById('modal').classList.add('hidden');
@@ -296,7 +306,7 @@ document.getElementById('form').onsubmit = async (e) => {
 
 // Excluir
 async function deleteTx(id) {
-    if(!confirm("Excluir?")) return;
+    if(!confirm("Excluir registro?")) return;
     try {
         await deleteDoc(doc(db, "transactions", id));
         await fetchTransactions();
@@ -304,10 +314,12 @@ async function deleteTx(id) {
     } catch(e) { alert("Erro ao excluir"); }
 }
 
-// Renderização (Igual à v13, mas adaptada para chamar deleteTx)
+// Renderização Geral
 function renderAll() {
     renderDashboard();
     renderTable();
+    renderFuturas();
+    renderExtrato();
 }
 
 function fmt(v) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
@@ -320,15 +332,33 @@ function renderDashboard() {
     const rec = txs.filter(t=>t.type==='entrada' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
     const desp = txs.filter(t=>t.type==='saida' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
     
-    document.getElementById('total-receitas-mes').textContent = fmt(rec);
-    document.getElementById('total-despesas-mes').textContent = fmt(desp);
-    document.getElementById('saldo-mes').textContent = fmt(rec - desp);
+    const elRec = document.getElementById('total-receitas-mes');
+    elRec.textContent = fmt(rec);
+    applyColor(elRec, rec, 'entrada');
+
+    const elDesp = document.getElementById('total-despesas-mes');
+    elDesp.textContent = fmt(desp);
+    applyColor(elDesp, desp, 'saida');
+
+    const elSaldo = document.getElementById('saldo-mes');
+    elSaldo.textContent = fmt(rec - desp);
+    applyColor(elSaldo, rec - desp);
     
     const prev = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
-    document.getElementById('receitas-previstas').textContent = fmt(prev);
+    const elPrev = document.getElementById('receitas-previstas');
+    elPrev.textContent = fmt(prev);
+    applyColor(elPrev, prev, 'entrada');
     
     const pagar = transactions.filter(t=>t.status==='pendente' && t.type==='saida').reduce((s,i)=>s+i.amount,0);
-    document.getElementById('contas-a-pagar').textContent = fmt(pagar);
+    const elPagar = document.getElementById('contas-a-pagar');
+    elPagar.textContent = fmt(pagar);
+    applyColor(elPagar, pagar, 'saida');
+
+    const receber = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
+    const previsao = receber - pagar;
+    const elFut = document.getElementById('previsao-futura');
+    elFut.textContent = fmt(previsao);
+    applyColor(elFut, previsao);
 }
 
 function renderTable() {
@@ -338,19 +368,20 @@ function renderTable() {
     
     const txs = transactions.filter(t => t.date.startsWith(m));
     
-    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center muted">Nada aqui.</td></tr>'; return; }
+    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center muted">Sem dados neste mês.</td></tr>'; return; }
 
     txs.forEach(t => {
         const tr = document.createElement('tr');
-        const color = t.type === 'entrada' ? 'text-green' : 'text-red';
-        const sign = t.type === 'entrada' ? '+' : '-';
+        const isRec = t.type === 'entrada';
+        const cssClass = isRec ? 'text-green' : 'text-red';
+        const sign = isRec ? '+' : '-';
         
         tr.innerHTML = `
             <td>${formatDate(t.date)}</td>
             <td>${t.description}</td>
             <td>${t.category}</td>
-            <td>${t.type}</td>
-            <td class="text-right font-bold ${color}">${sign} ${fmt(t.amount)}</td>
+            <td>${isRec ? 'Receita' : 'Dívida'}</td>
+            <td class="text-right font-bold ${cssClass}">${sign} ${fmt(t.amount)}</td>
             <td>${t.status}</td>
             <td>
                 <button class="btn-edit btn" data-id="${t.id}">Editar</button>
@@ -360,12 +391,48 @@ function renderTable() {
         tbody.appendChild(tr);
     });
 
-    // Event Listeners para botões dinâmicos
     document.querySelectorAll('.btn-del').forEach(b => b.onclick = () => deleteTx(b.dataset.id));
     document.querySelectorAll('.btn-edit').forEach(b => b.onclick = () => openEdit(b.dataset.id));
 }
 
-// Helpers de UI
+// Futuras
+function renderFuturas(){
+    const m = document.getElementById('futuras-month').value;
+    const tbody = document.getElementById('futuras-tbody');
+    tbody.innerHTML = '';
+    const txs = transactions.filter(t => t.status === 'pendente' && t.date.startsWith(m));
+    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center muted">Sem pendências.</td></tr>'; return; }
+    txs.forEach(t => {
+        const tr = document.createElement('tr');
+        const isRec = t.type === 'entrada';
+        const cssClass = isRec ? 'text-green' : 'text-red';
+        tr.innerHTML = `<td>${formatDate(t.date)}</td><td>${t.description}</td><td>${t.category}</td><td>${t.type}</td><td class="text-right font-bold ${cssClass}">${fmt(t.amount)}</td><td><button class="btn-baixa btn" data-id="${t.id}">Baixar</button></td>`;
+        tbody.appendChild(tr);
+    });
+    document.querySelectorAll('.btn-baixa').forEach(b => b.onclick = async () => {
+        await updateDoc(doc(db, "transactions", b.dataset.id), { status: 'efetivado' });
+        await fetchTransactions(); renderAll();
+    });
+}
+
+// Extrato
+function renderExtrato(){
+    const m = document.getElementById('extrato-month').value;
+    const list = document.getElementById('extrato-list');
+    const txs = transactions.filter(t => t.date.startsWith(m));
+    if(txs.length === 0) { list.innerHTML = 'Sem dados'; return; }
+    let h = '<table><thead><tr><th>Data</th><th>Desc</th><th>Cat</th><th>Tipo</th><th class="text-right">Valor</th><th>Status</th></tr></thead><tbody>';
+    txs.forEach(t=>{
+        const isRec = t.type === 'entrada';
+        const cssClass = isRec ? 'text-green' : 'text-red';
+        const sign = isRec ? '+' : '-';
+        h += `<tr><td>${formatDate(t.date)}</td><td>${t.description}</td><td>${t.category}</td><td>${t.type}</td><td class="text-right font-bold ${cssClass}">${sign} ${fmt(t.amount)}</td><td>${t.status}</td></tr>`;
+    });
+    h += '</tbody></table>';
+    list.innerHTML = h;
+}
+
+// Helpers UI
 function openEdit(id){
     const t = transactions.find(x=>x.id===id);
     if(!t) return;
@@ -378,7 +445,6 @@ function openEdit(id){
     document.getElementById('modal').classList.remove('hidden');
 }
 
-// Máscara de moeda
 const fVal = document.getElementById('field-valor');
 fVal.addEventListener('input', (e)=>{
     let v = e.target.value.replace(/\D/g,'');
@@ -386,26 +452,29 @@ fVal.addEventListener('input', (e)=>{
     e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 });
 
-// Datas Iniciais
+// Datas
 const today = new Date().toISOString().split('T')[0];
 const ym = today.slice(0,7);
-['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => document.getElementById(id).value = ym);
+['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el) { el.value = ym; el.onchange = renderAll; }
+});
 
-// Inicializar
-async function initData() {
-    await fetchTransactions();
-    renderAll();
-}
-
-// Botões globais
+// Botões Globais
 document.getElementById('btn-refresh').onclick = initData;
 document.getElementById('btn-refresh-all').onclick = initData;
+document.getElementById('btn-refresh-fut').onclick = initData;
 document.getElementById('fab-add').onclick = () => {
     document.getElementById('form').reset();
     document.getElementById('tx-id').value = '';
     document.getElementById('modal').classList.remove('hidden');
 };
 document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').classList.add('hidden');
+
+async function initData() {
+    await fetchTransactions();
+    renderAll();
+}
 
 </script>
 </body>
