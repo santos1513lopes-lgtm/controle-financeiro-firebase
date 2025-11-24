@@ -2,228 +2,178 @@
 <html lang="pt-BR">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>Controle Financeiro - v18</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Controle Financeiro - Firebase (Estável)</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   
   <style>
-    /* ESTILO MOBILE EXPANSIVO */
-    body { font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background:#f1f5f9; padding-bottom: 100px; margin: 0; -webkit-tap-highlight-color: transparent; }
-    
-    /* Status Bar para Debug */
-    #system-status { background: #333; color: #fff; font-size: 10px; text-align: center; padding: 4px; }
-    
-    .container-app { width: 100%; max-width: 800px; margin: 0 auto; padding: 10px; }
-    
-    .card { background:#fff; border-radius:16px; padding:16px; box-shadow:0 2px 10px rgba(0,0,0,0.03); margin-bottom:12px; width: 100%; border: 1px solid #f1f5f9; }
-    
-    /* Botão Flutuante */
-    .fab { position:fixed; right:20px; bottom:30px; background:#f59e0b; color:#fff; width:64px; height:64px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:36px; cursor:pointer; box-shadow:0 6px 20px rgba(245,158,11,0.4); z-index: 100; transition: transform 0.1s; }
-    .fab:active { transform: scale(0.90); }
-    
-    .hidden { display:none !important; }
-    
-    /* Tabela */
-    .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width:100%; border-collapse:collapse; min-width: 100%; }
-    th, td { padding:14px 8px; border-bottom:1px solid #f1f5f9; text-align:left; font-size: 14px; }
-    th { color: #94a3b8; font-weight: 500; font-size: 12px; text-transform: uppercase; }
-    
-    /* Botões */
-    .btn { padding:14px 20px; border-radius:12px; background:#f59e0b; color:#fff; border:none; font-size: 16px; font-weight: 600; width: 100%; display: block; text-align: center; }
-    .btn:active { opacity: 0.8; transform: translateY(1px); }
-    .btn.secondary { background:#cbd5e1; color: #334155; }
-    .btn-sm { padding: 6px 12px; font-size: 12px; width: auto; display: inline-block; margin-left: 4px; border-radius: 6px; }
-    
-    /* Inputs */
-    input, select, textarea { padding:14px; border-radius:12px; border:1px solid #e2e8f0; width: 100%; font-size: 16px; background: #fff; margin-bottom: 10px; appearance: none; }
-    input:focus, select:focus { border-color: #f59e0b; outline: none; }
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f8fafc; }
+    .card { background:#fff;border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(20,20,40,0.04);margin-bottom:14px; }
+    .fab { position:fixed; right:28px; bottom:28px; background:#f59e0b; color:#fff; width:56px; height:56px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; box-shadow:0 8px 24px rgba(245,158,11,0.3); z-index: 50; }
+    .hidden { display:none; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px; border-bottom:1px solid #f1f5f9; text-align:left; }
+    .muted { color:#6b7280; }
+    .btn { padding:8px 12px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; }
+    .btn.secondary { background:#6b7280; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }
+    input[type="month"], input, select, textarea { padding:8px; border-radius:6px; border:1px solid #e5e7eb; width: 100%; }
     
     /* Cores */
-    .text-green { color: #16a34a; font-weight: 700; }
-    .text-red { color: #dc2626; font-weight: 700; }
-    .muted { color:#94a3b8; font-size: 12px; }
-    
-    /* Tabs */
-    .nav-scroll { overflow-x: auto; padding-bottom: 5px; white-space: nowrap; -webkit-overflow-scrolling: touch; }
-    .tab-btn { display: inline-block; padding: 8px 16px; border-radius: 20px; font-size: 14px; font-weight: 500; margin-right: 5px; background: #e2e8f0; color: #64748b; border: none; }
-    .tab-btn.active { background: #2563eb; color: #fff; }
+    .text-green-600 { color: #16a34a !important; font-weight: 700; }
+    .text-red-600 { color: #dc2626 !important; font-weight: 700; }
   </style>
 </head>
 <body>
-  
-  <div id="system-status">Iniciando sistema...</div>
-
-  <div class="container-app">
+  <div class="max-w-6xl mx-auto p-6">
     
-    <div class="flex flex-col gap-4 mb-6">
+    <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
       <div>
-        <h1 class="text-2xl font-bold text-gray-800">Finanças App 🔥</h1>
-        <p class="muted">Controle via Firebase</p>
+        <h1 class="text-2xl font-bold text-gray-800">Finanças Firebase 🔥</h1>
+        <p class="text-sm muted">Sistema de Gestão Financeira</p>
       </div>
-
-      <div class="card p-4">
-        <div id="login-area">
-            <input type="email" id="email" placeholder="Seu e-mail" />
-            <input type="password" id="password" placeholder="Sua senha" />
-            <div class="flex gap-2 mt-2">
-                <button id="btn-login" class="btn">Entrar</button>
-                <button id="btn-signup" class="btn secondary">Criar Conta</button>
-            </div>
-            <p id="auth-msg" class="text-red text-center mt-2 text-sm"></p>
+      
+      <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+        <div class="flex gap-2 w-full md:w-auto">
+            <button id="btn-refresh-all" class="btn secondary flex-1">Atualizar</button>
+            <button id="btn-logout" class="btn secondary flex-1 hidden">Sair</button>
         </div>
-
-        <div id="user-area" class="hidden flex justify-between items-center">
-            <div>
-                <div class="muted">Logado como</div>
-                <div id="user-email" class="font-bold text-gray-700">...</div>
+        
+        <div id="auth-area" class="card p-3 mb-0" style="min-width: 300px;">
+            <div id="login-form" class="flex flex-col gap-2">
+                <input id="email" placeholder="E-mail" />
+                <input id="password" type="password" placeholder="Senha" />
+                <div class="flex gap-2">
+                    <button id="btn-login" class="btn flex-1">Entrar</button>
+                    <button id="btn-signup" class="btn secondary flex-1">Criar</button>
+                </div>
+                <div id="auth-msg" class="text-xs text-center text-red-500 mt-1"></div>
             </div>
-            <button id="btn-logout" class="btn-sm secondary">Sair</button>
+            <div id="user-info" class="hidden">
+                <div class="text-xs muted">Logado como</div>
+                <div id="user-email" class="font-bold text-sm">...</div>
+            </div>
         </div>
       </div>
-    </div>
+    </header>
 
     <div id="app-content" class="hidden">
         
-        <div class="nav-scroll mb-4">
-            <button class="tab-btn active" data-target="dashboard">Dashboard</button>
-            <button class="tab-btn" data-target="transacoes">Transações</button>
-            <button class="tab-btn" data-target="futuras">Futuras</button>
-            <button class="tab-btn" data-target="extrato">Extrato</button>
-        </div>
-
-        <div id="sections-container">
-            
-            <section id="dashboard">
-                <div class="card mb-4">
-                    <label class="muted block mb-1">Mês de Referência</label>
-                    <input type="month" id="dash-month" class="mb-0 font-bold text-gray-700 bg-gray-50" />
-                </div>
-
-                <div class="card text-center">
-                    <div class="muted uppercase tracking-widest mb-1">Saldo Líquido</div>
-                    <div id="saldo-mes" class="text-4xl font-bold text-gray-800">R$ 0,00</div>
-                </div>
-
-                <div class="grid grid-cols-2 gap-3 mb-3">
-                    <div class="card mb-0 bg-green-50 border-green-100">
-                        <div class="muted text-green-700">Receitas</div>
-                        <div id="total-receitas-mes" class="text-xl font-bold text-green">R$ 0,00</div>
-                    </div>
-                    <div class="card mb-0 bg-red-50 border-red-100">
-                        <div class="muted text-red-700">Despesas</div>
-                        <div id="total-despesas-mes" class="text-xl font-bold text-red">R$ 0,00</div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2">
-                        <span class="muted">Previsto Receber</span>
-                        <span id="receitas-previstas" class="font-bold text-green">R$ 0,00</span>
-                    </div>
-                    <div class="flex justify-between items-center border-b border-gray-100 pb-2 mb-2">
-                        <span class="muted">Contas a Pagar</span>
-                        <span id="contas-a-pagar" class="font-bold text-red">R$ 0,00</span>
-                    </div>
-                    <div class="flex justify-between items-center">
-                        <span class="muted">Previsão Futura</span>
-                        <span id="previsao-futura" class="font-bold text-gray-600">R$ 0,00</span>
-                    </div>
-                </div>
-            </section>
-
-            <section id="transacoes" class="hidden">
-                <div class="card">
-                    <div class="flex gap-2 mb-2">
-                        <input type="month" id="trans-month" class="flex-1 mb-0" />
-                        <select id="trans-type" class="w-24 mb-0"><option value="todos">Tudo</option><option value="entrada">Ent</option><option value="saida">Sai</option></select>
-                    </div>
-                    <div class="flex gap-2">
-                        <input id="trans-search" placeholder="Buscar..." class="mb-0" />
-                        <button id="btn-refresh" class="btn-sm secondary" style="height: 48px; width: 50px;">↻</button>
-                    </div>
-                </div>
-                
-                <div class="card p-0 overflow-hidden">
-                    <div class="table-container">
-                        <table>
-                            <thead><tr><th>Dia</th><th>Desc</th><th>Valor</th><th>Ação</th></tr></thead>
-                            <tbody id="trans-tbody"><tr><td colspan="4" class="text-center muted py-4">Carregando...</td></tr></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <section id="futuras" class="hidden">
-                <div class="card flex gap-2 items-center">
-                    <input type="month" id="futuras-month" class="mb-0" />
-                    <button id="btn-refresh-fut" class="btn-sm secondary h-12 w-12">↻</button>
-                </div>
-                <div class="card p-0 overflow-hidden">
-                    <div class="table-container">
-                        <table>
-                            <thead><tr><th>Dia</th><th>Desc</th><th>Valor</th><th>Ação</th></tr></thead>
-                            <tbody id="futuras-tbody"><tr><td colspan="4" class="text-center muted py-4">Sem dados</td></tr></tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
-
-            <section id="extrato" class="hidden">
-                <div class="card">
-                    <input type="month" id="extrato-month" class="mb-3" />
-                    <div class="flex gap-2">
-                        <button id="btn-generate-pdf" class="btn">PDF</button>
-                        <button id="btn-generate-csv" class="btn secondary">CSV</button>
-                    </div>
-                </div>
-                <div class="card p-0 overflow-hidden">
-                    <div class="p-3 bg-gray-50 border-b text-xs uppercase font-bold text-gray-500">Pré-visualização</div>
-                    <div id="extrato-list" class="p-3 text-sm">Nada selecionado</div>
-                </div>
-            </section>
-
-        </div> </div> <div class="fab" id="fab-add">+</div>
-
-    <div id="modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-end justify-center p-0">
-        <div class="bg-white w-full rounded-t-3xl p-6 animate-slide-up" style="max-width: 600px; max-height: 90vh; overflow-y: auto;">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="text-xl font-bold text-gray-800">Novo Lançamento</h3>
-                <button id="btn-close-modal" class="text-2xl text-gray-400 font-bold">&times;</button>
+        <nav class="mb-4 overflow-x-auto">
+            <div class="flex gap-2">
+                <button class="tab-btn btn active" data-tab="dashboard">Dashboard</button>
+                <button class="tab-btn btn secondary" data-tab="transacoes">Transações</button>
+                <button class="tab-btn btn secondary" data-tab="futuras">Contas Futuras</button>
+                <button class="tab-btn btn secondary" data-tab="extrato">Extrato & Export</button>
             </div>
-            
+        </nav>
+
+        <main>
+            <section id="dashboard" class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <label class="small muted">Mês:</label>
+                        <input id="dash-month" type="month" class="border p-2 rounded" />
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="card"><div class="small muted">Total Receitas (mês)</div><div id="total-receitas-mes" class="text-xl font-bold">R$ 0,00</div></div>
+                    <div class="card"><div class="small muted">Total Despesas (mês)</div><div id="total-despesas-mes" class="text-xl font-bold">R$ 0,00</div></div>
+                    <div class="card"><div class="small muted">Saldo Líquido (mês)</div><div id="saldo-mes" class="text-xl font-bold">R$ 0,00</div></div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="card">
+                        <div class="small muted">Receitas Previstas (a receber)</div>
+                        <div id="receitas-previstas" class="text-lg font-bold text-green-600">R$ 0,00</div>
+                    </div>
+                    <div class="card"><div class="small muted">Contas a Pagar (em aberto)</div><div id="contas-a-pagar" class="text-lg font-bold text-red-600">R$ 0,00</div></div>
+                    <div class="card"><div class="small muted">Previsão Líquida Futura</div><div id="previsao-futura" class="text-lg font-bold">R$ 0,00</div></div>
+                </div>
+            </section>
+
+            <section id="transacoes" class="card hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+                    <div class="flex gap-2 items-end w-full md:w-auto">
+                        <div><label class="small muted">Mês</label><input id="trans-month" type="month" /></div>
+                        <div><label class="small muted">Tipo</label><select id="trans-type"><option value="todos">Todos</option><option value="entrada">Receitas</option><option value="saida">Dívidas</option></select></div>
+                    </div>
+                    <div class="w-full md:w-auto">
+                        <button id="btn-refresh" class="btn w-full">Atualizar</button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table>
+                        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th class="text-right">Valor</th><th>Status</th><th>Ações</th></tr></thead>
+                        <tbody id="trans-tbody"><tr><td colspan="7" class="text-center muted py-8">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="futuras" class="card hidden">
+                <div class="mb-4 flex justify-between items-center">
+                    <div><label class="small muted">Mês</label><input id="futuras-month" type="month" /></div>
+                    <div><button id="btn-refresh-fut" class="btn">Atualizar</button></div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table>
+                        <thead><tr><th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th class="text-right">Valor</th><th>Ações</th></tr></thead>
+                        <tbody id="futuras-tbody"><tr><td colspan="6" class="text-center muted py-8">Sem dados</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="extrato" class="card hidden">
+                <div class="flex gap-4 items-end mb-4">
+                    <div><label class="small muted">Mês</label><input id="extrato-month" type="month" /></div>
+                    <div>
+                        <button id="btn-generate-pdf" class="btn">Gerar PDF</button>
+                        <button id="btn-generate-csv" class="btn secondary">Gerar CSV</button>
+                    </div>
+                </div>
+                <div id="extrato-preview" class="card">
+                    <div class="small muted mb-2">Pré-visualização</div>
+                    <div id="extrato-list">Nenhum dado selecionado</div>
+                </div>
+            </section>
+        </main>
+
+        <div class="fab" id="fab-add" title="Adicionar">+</div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg w-full max-w-lg">
+            <h3 class="text-lg font-bold mb-2">Novo lançamento</h3>
             <form id="form">
                 <input type="hidden" id="tx-id" />
-                
-                <label class="muted ml-1">Valor</label>
-                <input id="field-valor" required placeholder="R$ 0,00" class="text-4xl font-bold text-center text-gray-800 border-0 border-b-2 border-gray-200 rounded-none focus:ring-0 focus:border-orange-500 px-0" inputmode="numeric" />
-                
-                <div class="grid grid-cols-2 gap-3 mt-4">
-                    <div><label class="muted">Tipo</label><select id="field-tipo"><option value="saida">🔴 Despesa</option><option value="entrada">🟢 Receita</option></select></div>
-                    <div><label class="muted">Data</label><input id="field-data" type="date" required /></div>
-                </div>
-
-                <input id="field-categoria" placeholder="Categoria (ex: Mercado)" />
-                <input id="field-desc" placeholder="Descrição (Opcional)" />
-
-                <div class="grid grid-cols-2 gap-3">
-                    <div><label class="muted">Status</label><select id="field-status"><option value="efetivado">✅ Pago</option><option value="pendente">⏳ Pendente</option></select></div>
-                    <div><label class="muted">Repetir?</label><select id="field-recurrence"><option value="none">Não</option><option value="parcel">Parcelado</option><option value="fixed_monthly">Mensal Fixo</option></select></div>
-                </div>
-
-                <div id="recurrence-details" class="hidden bg-blue-50 p-3 rounded mb-3">
+                <div class="grid grid-cols-1 gap-3">
+                    <input id="field-valor" required placeholder="Valor (ex: 150,50)" class="border p-2 rounded" />
+                    <select id="field-tipo" class="border p-2 rounded"><option value="entrada">Receita</option><option value="saida">Dívida</option></select>
+                    <input id="field-categoria" placeholder="Categoria" class="border p-2 rounded" />
+                    <input id="field-data" type="date" class="border p-2 rounded" required />
+                    <textarea id="field-desc" placeholder="Descrição" class="border p-2 rounded"></textarea>
+                    
                     <div class="grid grid-cols-2 gap-2">
-                        <input id="recurrence-count" type="number" placeholder="Quantas vezes?" />
-                        <select id="recurrence-interval"><option value="monthly">Mensal</option><option value="weekly">Semanal</option></select>
+                        <div><label class="small muted">Status</label><select id="field-status" class="border p-2 rounded"><option value="pendente">Pendente</option><option value="efetivado" selected>Efetivado</option></select></div>
+                        <div><label class="small muted">Recorrência</label><select id="field-recurrence" class="border p-2 rounded"><option value="none">Não recorrente</option><option value="parcel">Parcelar</option><option value="fixed_monthly">Fixa mensal</option></select></div>
                     </div>
-                </div>
 
-                <div class="flex gap-3 mt-4">
-                    <button type="button" id="btn-cancel" class="btn secondary">Cancelar</button>
-                    <button type="submit" id="btn-save" class="btn">Salvar</button>
+                    <div id="recurrence-details" class="hidden">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input id="recurrence-count" type="number" min="2" placeholder="Qtd" class="border p-2 rounded" />
+                            <select id="recurrence-interval" class="border p-2 rounded"><option value="monthly">Mensal</option><option value="weekly">Semanal</option></select>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" id="btn-cancel" class="btn secondary">Cancelar</button>
+                        <button type="submit" id="btn-save" class="btn">Salvar</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -232,291 +182,121 @@
   </div>
 
 <script type="module">
-    // --- CONFIGURAÇÃO ROBUSTA ---
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+// FIREBASE IMPORTS
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyC5aGRF1qU1rhfi7jHZywy5NNaPr6lJfvo",
-      authDomain: "controlefinanceirov1-c2b59.firebaseapp.com",
-      projectId: "controlefinanceirov1-c2b59",
-      storageBucket: "controlefinanceirov1-c2b59.firebasestorage.app",
-      messagingSenderId: "28738888590",
-      appId: "1:28738888590:web:ddfca08150f981fb163adf"
-    };
+// FIREBASE CONFIG
+const firebaseConfig = {
+  apiKey: "AIzaSyC5aGRF1qU1rhfi7jHZywy5NNaPr6lJfvo",
+  authDomain: "controlefinanceirov1-c2b59.firebaseapp.com",
+  projectId: "controlefinanceirov1-c2b59",
+  storageBucket: "controlefinanceirov1-c2b59.firebasestorage.app",
+  messagingSenderId: "28738888590",
+  appId: "1:28738888590:web:ddfca08150f981fb163adf"
+};
 
-    // Debug
-    const statusEl = document.getElementById('system-status');
-    function logStatus(msg) { statusEl.textContent = msg; console.log(msg); }
+// INIT
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
 
-    let app, db, auth;
-    let currentUser = null;
-    let transactions = [];
+let currentUser = null;
+let transactions = [];
 
-    try {
-        app = initializeApp(firebaseConfig);
-        db = getFirestore(app);
-        auth = getAuth(app);
-        logStatus("Firebase Conectado. Aguardando Auth...");
-    } catch(e) {
-        logStatus("ERRO FATAL FIREBASE: " + e.message);
-        alert("Erro ao conectar no banco de dados. Verifique a internet.");
+// DOM Elements
+const appContent = document.getElementById('app-content');
+const loginForm = document.getElementById('login-form');
+const userInfo = document.getElementById('user-info');
+const userEmailDisplay = document.getElementById('user-email');
+const btnLogout = document.getElementById('btn-logout');
+const authMsg = document.getElementById('auth-msg');
+
+// --- AUTH ---
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        loginForm.classList.add('hidden');
+        userInfo.classList.remove('hidden');
+        btnLogout.classList.remove('hidden');
+        userEmailDisplay.textContent = user.email;
+        appContent.classList.remove('hidden');
+        initData();
+    } else {
+        currentUser = null;
+        loginForm.classList.remove('hidden');
+        userInfo.classList.add('hidden');
+        btnLogout.classList.add('hidden');
+        appContent.classList.add('hidden');
     }
+});
 
-    // --- UI LOGIC (Separada para não travar) ---
-    const tabBtns = document.querySelectorAll('.tab-btn');
-    const sections = {
-        dashboard: document.getElementById('dashboard'),
-        transacoes: document.getElementById('transacoes'),
-        futuras: document.getElementById('futuras'),
-        extrato: document.getElementById('extrato')
-    };
+document.getElementById('btn-login').onclick = async () => {
+    try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); }
+    catch (e) { authMsg.textContent = "Erro: " + e.message; }
+};
+document.getElementById('btn-signup').onclick = async () => {
+    try { await createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); alert("Conta criada!"); }
+    catch (e) { authMsg.textContent = "Erro: " + e.message; }
+};
+btnLogout.onclick = async () => { await signOut(auth); window.location.reload(); };
 
-    // Navegação Segura
-    tabBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const target = btn.dataset.target;
-            
-            // Visual Botões
-            tabBtns.forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+// --- TABS ---
+const tabs = document.querySelectorAll('.tab-btn');
+const sections = { dashboard: document.getElementById('dashboard'), transacoes: document.getElementById('transacoes'), futuras: document.getElementById('futuras'), extrato: document.getElementById('extrato') };
 
-            // Visual Seções
-            Object.values(sections).forEach(s => s.classList.add('hidden'));
-            if(sections[target]) sections[target].classList.remove('hidden');
-        });
+tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+        tabs.forEach(b => { b.classList.remove('active'); b.classList.add('secondary'); });
+        btn.classList.remove('secondary'); btn.classList.add('active');
+        Object.values(sections).forEach(s => s.classList.add('hidden'));
+        sections[btn.dataset.tab].classList.remove('hidden');
     });
+});
 
-    // Modal UI
-    const modal = document.getElementById('modal');
-    const openModal = () => {
-        document.getElementById('form').reset();
-        document.getElementById('tx-id').value = '';
-        document.getElementById('field-data').value = new Date().toISOString().split('T')[0];
-        modal.classList.remove('hidden');
-    };
-    const closeModal = () => modal.classList.add('hidden');
+// --- DATA LOGIC ---
+async function fetchTransactions() {
+    if(!currentUser) return;
+    const q = query(collection(db, "transactions"), where("user_id", "==", currentUser.uid));
+    const querySnapshot = await getDocs(q);
+    transactions = [];
+    querySnapshot.forEach((doc) => { transactions.push({ id: doc.id, ...doc.data() }); });
+    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return transactions;
+}
+
+// --- RENDER ---
+function applyColor(el, val, type) {
+    if(!el) return;
+    el.className = el.className.replace(/text-(green|red)-600/g, '');
+    if(type === 'entrada') el.classList.add('text-green-600');
+    else if(type === 'saida') el.classList.add('text-red-600');
+    else {
+        if(val >= 0) el.classList.add('text-green-600');
+        else el.classList.add('text-red-600');
+    }
+}
+function fmt(v) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function formatDate(d) { if(!d) return ''; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+
+function renderDashboard() {
+    const m = document.getElementById('dash-month').value;
+    const txs = transactions.filter(t => t.date.startsWith(m));
     
-    document.getElementById('fab-add').addEventListener('click', openModal);
-    document.getElementById('btn-close-modal').addEventListener('click', closeModal);
-    document.getElementById('btn-cancel').addEventListener('click', closeModal);
+    const rec = txs.filter(t=>t.type==='entrada' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
+    const desp = txs.filter(t=>t.type==='saida' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
+    
+    const elRec = document.getElementById('total-receitas-mes'); elRec.textContent = fmt(rec); applyColor(elRec, rec, 'entrada');
+    const elDesp = document.getElementById('total-despesas-mes'); elDesp.textContent = fmt(desp); applyColor(elDesp, desp, 'saida');
+    
+    const saldo = rec - desp;
+    const elSaldo = document.getElementById('saldo-mes'); elSaldo.textContent = fmt(saldo); applyColor(elSaldo, saldo);
+    
+    const prev = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
+    const elPrev = document.getElementById('receitas-previstas'); elPrev.textContent = fmt(prev); applyColor(elPrev, prev, 'entrada');
+    
+    const pagar = transactions.filter(t=>t.status==='pendente' && t.type==='saida').reduce((s,i)=>s+i.amount,0);
+    const elPagar = document.getElementById('contas-a-pagar'); elPagar.textContent = fmt(pagar); applyColor(elPagar, pagar, 'saida');
 
-    // Mascara Moeda
-    const fVal = document.getElementById('field-valor');
-    fVal.addEventListener('input', (e) => {
-        let v = e.target.value.replace(/\D/g,'');
-        if(!v) return;
-        e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-    });
-
-    // Recorrência
-    const fieldRecurrence = document.getElementById('field-recurrence');
-    const recurrenceDetails = document.getElementById('recurrence-details');
-    fieldRecurrence.addEventListener('change', () => {
-        if(fieldRecurrence.value !== 'none') recurrenceDetails.classList.remove('hidden');
-        else recurrenceDetails.classList.add('hidden');
-    });
-
-    // --- FIREBASE LOGIC ---
-
-    // Auth Listener
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('login-area').classList.add('hidden');
-            document.getElementById('user-area').classList.remove('hidden');
-            document.getElementById('app-content').classList.remove('hidden');
-            document.getElementById('user-email').textContent = user.email;
-            logStatus("Conectado: " + user.email);
-            initData();
-        } else {
-            currentUser = null;
-            document.getElementById('login-area').classList.remove('hidden');
-            document.getElementById('user-area').classList.add('hidden');
-            document.getElementById('app-content').classList.add('hidden');
-            logStatus("Desconectado. Faça login.");
-        }
-    });
-
-    // Botoes Login
-    document.getElementById('btn-login').addEventListener('click', async () => {
-        const em = document.getElementById('email').value;
-        const pass = document.getElementById('password').value;
-        try {
-            logStatus("Entrando...");
-            await signInWithEmailAndPassword(auth, em, pass);
-        } catch (e) { 
-            document.getElementById('auth-msg').textContent = "Erro: " + e.message;
-            logStatus("Erro login");
-        }
-    });
-
-    document.getElementById('btn-signup').addEventListener('click', async () => {
-        const em = document.getElementById('email').value;
-        const pass = document.getElementById('password').value;
-        try {
-            await createUserWithEmailAndPassword(auth, em, pass);
-            alert("Conta criada!");
-        } catch (e) { document.getElementById('auth-msg').textContent = "Erro: " + e.message; }
-    });
-
-    document.getElementById('btn-logout').addEventListener('click', async () => {
-        await signOut(auth);
-        window.location.reload();
-    });
-
-    // --- DADOS E RENDERIZAÇÃO ---
-
-    async function fetchTransactions() {
-        if(!currentUser) return;
-        logStatus("Buscando dados...");
-        try {
-            const q = query(collection(db, "transactions"), where("user_id", "==", currentUser.uid));
-            const querySnapshot = await getDocs(q);
-            transactions = [];
-            querySnapshot.forEach((doc) => {
-                transactions.push({ id: doc.id, ...doc.data() });
-            });
-            transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
-            logStatus("Pronto.");
-            return transactions;
-        } catch(e) {
-            logStatus("Erro ao buscar dados: " + e.message);
-        }
-    }
-
-    // Helpers
-    function fmt(v) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
-    function formatDate(d) { if(!d) return ''; const p=d.split('-'); return `${p[2]}/${p[1]}`; } // Dia/Mes apenas para mobile
-    function applyColor(el, val, type) {
-        el.classList.remove('text-green', 'text-red');
-        if(type === 'entrada' || val > 0) el.classList.add('text-green');
-        if(type === 'saida' || val < 0) el.classList.add('text-red');
-    }
-
-    function renderDashboard() {
-        const m = document.getElementById('dash-month').value;
-        const txs = transactions.filter(t => t.date.startsWith(m));
-        
-        const rec = txs.filter(t=>t.type==='entrada' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
-        const desp = txs.filter(t=>t.type==='saida' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
-        
-        document.getElementById('total-receitas-mes').textContent = fmt(rec);
-        document.getElementById('total-despesas-mes').textContent = fmt(desp);
-        
-        const saldo = rec - desp;
-        const elSaldo = document.getElementById('saldo-mes');
-        elSaldo.textContent = fmt(saldo);
-        applyColor(elSaldo, saldo);
-
-        const prev = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
-        document.getElementById('receitas-previstas').textContent = fmt(prev);
-
-        const pagar = transactions.filter(t=>t.status==='pendente' && t.type==='saida').reduce((s,i)=>s+i.amount,0);
-        document.getElementById('contas-a-pagar').textContent = fmt(pagar);
-
-        const receber = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
-        const futura = receber - pagar;
-        const elFut = document.getElementById('previsao-futura');
-        elFut.textContent = fmt(futura);
-        applyColor(elFut, futura);
-    }
-
-    function renderTable() {
-        const m = document.getElementById('trans-month').value;
-        const tbody = document.getElementById('trans-tbody');
-        tbody.innerHTML = '';
-        const txs = transactions.filter(t => t.date.startsWith(m));
-        
-        if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="4" class="text-center muted py-4">Sem lançamentos.</td></tr>'; return; }
-
-        txs.forEach(t => {
-            const tr = document.createElement('tr');
-            const sign = t.type === 'entrada' ? '+' : '-';
-            const colorClass = t.type === 'entrada' ? 'text-green' : 'text-red';
-            
-            tr.innerHTML = `
-                <td><b class="text-gray-700">${t.date.split('-')[2]}</b></td>
-                <td>
-                    <div class="font-medium text-gray-800">${t.description || 'Sem desc'}</div>
-                    <div class="text-xs muted">${t.category} • ${t.status}</div>
-                </td>
-                <td class="text-right ${colorClass}">${sign}${fmt(t.amount)}</td>
-                <td class="text-right">
-                    <button class="btn-del text-red text-xl px-2" data-id="${t.id}">&times;</button>
-                </td>
-            `;
-            tbody.appendChild(tr);
-        });
-
-        document.querySelectorAll('.btn-del').forEach(b => {
-            b.addEventListener('click', async () => {
-                if(confirm('Apagar?')) {
-                    await deleteDoc(doc(db, "transactions", b.dataset.id));
-                    initData();
-                }
-            });
-        });
-    }
-
-    // Outras renderizações simplificadas
-    function renderFuturas() { /* ... lógica similar ... */ }
-    function renderExtrato() { /* ... lógica similar ... */ }
-
-    function renderAll() {
-        renderDashboard();
-        renderTable();
-        // Futuras e Extrato renderizam se necessário
-    }
-
-    // Salvar Form
-    document.getElementById('form').addEventListener('submit', async (e) => {
-        e.preventDefault();
-        if(!currentUser) return;
-        
-        const id = document.getElementById('tx-id').value;
-        const valStr = document.getElementById('field-valor').value.replace(/\D/g,'');
-        const amount = valStr ? Number(valStr)/100 : 0;
-        if(amount === 0) return alert("Valor zerado");
-
-        const data = {
-            user_id: currentUser.uid,
-            amount: amount,
-            type: document.getElementById('field-tipo').value,
-            date: document.getElementById('field-data').value,
-            category: document.getElementById('field-categoria').value || 'Geral',
-            description: document.getElementById('field-desc').value,
-            status: document.getElementById('field-status').value,
-            recurrence: document.getElementById('field-recurrence').value
-        };
-
-        document.getElementById('btn-save').textContent = "Salvando...";
-        try {
-            if(id) await updateDoc(doc(db, "transactions", id), data);
-            else await addDoc(collection(db, "transactions"), data);
-            closeModal();
-            initData();
-        } catch(e) { alert("Erro: " + e.message); }
-        finally { document.getElementById('btn-save').textContent = "Salvar"; }
-    });
-
-    // Datas Iniciais
-    const ym = new Date().toISOString().slice(0,7);
-    ['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) { el.value = ym; el.addEventListener('change', renderAll); }
-    });
-
-    document.getElementById('btn-refresh').addEventListener('click', initData);
-    document.getElementById('btn-refresh-fut').addEventListener('click', initData);
-
-    async function initData() {
-        await fetchTransactions();
-        renderAll();
-    }
-
-</script>
-</body>
-</html>
+    const receber = transactions.filter(t=>t.status==='pendente' &&
