@@ -1,0 +1,477 @@
+========================================================================
+PROJETO: CONTROLE FINANCEIRO EMPRESARIAL (VERSÃO FIREBASE)
+Data do Backup: 23/11/2025
+Versão: v22 (Final Stable - Filtros Completos)
+========================================================================
+
+1. VISÃO GERAL
+------------------------------------------------------------------------
+Sistema web de gestão financeira (Single Page Application) otimizado para
+Desktop e Mobile. Permite controle de fluxo de caixa, previsões futuras
+e relatórios, utilizando arquitetura Serverless.
+
+2. TECNOLOGIAS
+------------------------------------------------------------------------
+- Front-end: HTML5, JavaScript (ES Modules), TailwindCSS.
+- Back-end: Google Firebase (Firestore & Authentication).
+- Hospedagem: GitHub Pages.
+
+3. FUNCIONALIDADES (Versão v22)
+------------------------------------------------------------------------
+A) Dashboard Estratégico:
+   - Totais do Mês (Receitas/Despesas/Saldo).
+   - Card "Receitas Previstas": Soma entradas com status pendente.
+   - Card "Contas a Pagar": Soma saídas com status pendente.
+   - Cores Inteligentes: Verde (Positivo) e Vermelho (Negativo).
+
+B) Aba Transações:
+   - Listagem completa com cores automáticas (+/-).
+   - Filtros Avançados: Busca por Texto e Filtro por Tipo (Receita/Dívida).
+   - Edição e Exclusão de lançamentos.
+
+C) Aba Contas Futuras (Novidade v22):
+   - Filtros Avançados: Busca por Texto e Tipo.
+   - Botão "Baixar": Marca a conta como efetivada rapidamente.
+
+D) Relatórios:
+   - Pré-visualização de Extrato.
+   - Exportação para PDF e CSV (Excel).
+
+4. GUIA DE RECUPERAÇÃO (FIREBASE)
+------------------------------------------------------------------------
+Se precisar configurar um novo banco de dados:
+
+1. Crie projeto no console.firebase.google.com
+2. Crie um "Firestore Database".
+3. Configure as Regras de Segurança (Aba Regras):
+   allow read, write: if request.auth != null;
+4. Ative "Authentication" (Provedor E-mail/Senha).
+5. Pegue as chaves em "Configurações do Projeto" > "Web".
+
+5. CÓDIGO FONTE COMPLETO (index.html - v22)
+------------------------------------------------------------------------
+(Copie o código abaixo para um arquivo index.html para restaurar o sistema)
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Controle Financeiro - Firebase v22</title>
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  
+  <style>
+    body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; background:#f8fafc; }
+    .card { background:#fff;border-radius:10px;padding:16px;box-shadow:0 6px 18px rgba(20,20,40,0.04);margin-bottom:14px; }
+    .fab { position:fixed; right:28px; bottom:28px; background:#f59e0b; color:#fff; width:56px; height:56px; border-radius:999px; display:flex; align-items:center; justify-content:center; font-size:28px; cursor:pointer; box-shadow:0 8px 24px rgba(245,158,11,0.3); z-index: 50; }
+    .hidden { display:none; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:12px 8px; border-bottom:1px solid #f1f5f9; text-align:left; vertical-align: middle; }
+    .muted { color:#6b7280; }
+    .btn { padding:8px 12px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
+    .btn.secondary { background:#6b7280; }
+    .btn-table-edit { background-color: #3b82f6; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; margin-right: 4px; }
+    .btn-table-del { background-color: #ef4444; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; }
+    .btn-table-baixa { background-color: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-size: 12px; width: 100%; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace; }
+    input[type="month"], input, select, textarea { padding:8px; border-radius:6px; border:1px solid #e5e7eb; width: 100%; }
+    .text-green-600 { color: #16a34a !important; font-weight: 700; }
+    .text-red-600 { color: #dc2626 !important; font-weight: 700; }
+    .truncate-text { max-width: 180px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  </style>
+</head>
+<body>
+  <div class="max-w-6xl mx-auto p-6">
+    <header class="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-800">Finanças Firebase 🔥</h1>
+        <p class="text-sm muted">Sistema de Gestão Financeira v22</p>
+      </div>
+      <div class="flex flex-col md:flex-row items-center gap-4 w-full md:w-auto">
+        <div class="flex gap-2 w-full md:w-auto">
+            <button id="btn-refresh-all" class="btn secondary flex-1">Atualizar</button>
+            <button id="btn-logout" class="btn secondary flex-1 hidden">Sair</button>
+        </div>
+        <div id="auth-area" class="card p-3 mb-0" style="min-width: 300px;">
+            <div id="login-form" class="flex flex-col gap-2">
+                <input id="email" placeholder="E-mail" />
+                <input id="password" type="password" placeholder="Senha" />
+                <div class="flex gap-2">
+                    <button id="btn-login" class="btn flex-1">Entrar</button>
+                    <button id="btn-signup" class="btn secondary flex-1">Criar</button>
+                </div>
+                <div id="auth-msg" class="text-xs text-center text-red-500 mt-1"></div>
+            </div>
+            <div id="user-info" class="hidden">
+                <div class="text-xs muted">Logado como</div>
+                <div id="user-email" class="font-bold text-sm">...</div>
+            </div>
+        </div>
+      </div>
+    </header>
+
+    <div id="app-content" class="hidden">
+        <nav class="mb-4 overflow-x-auto">
+            <div class="flex gap-2">
+                <button class="tab-btn btn active" data-tab="dashboard">Dashboard</button>
+                <button class="tab-btn btn secondary" data-tab="transacoes">Transações</button>
+                <button class="tab-btn btn secondary" data-tab="futuras">Contas Futuras</button>
+                <button class="tab-btn btn secondary" data-tab="extrato">Extrato & Export</button>
+            </div>
+        </nav>
+
+        <main>
+            <section id="dashboard" class="card">
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center gap-3 w-full md:w-auto">
+                        <label class="small muted">Mês:</label>
+                        <input id="dash-month" type="month" class="border p-2 rounded" />
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div class="card"><div class="small muted">Total Receitas (mês)</div><div id="total-receitas-mes" class="text-xl font-bold">R$ 0,00</div></div>
+                    <div class="card"><div class="small muted">Total Despesas (mês)</div><div id="total-despesas-mes" class="text-xl font-bold">R$ 0,00</div></div>
+                    <div class="card"><div class="small muted">Saldo Líquido (mês)</div><div id="saldo-mes" class="text-xl font-bold">R$ 0,00</div></div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="card">
+                        <div class="small muted">Receitas Previstas (a receber)</div>
+                        <div id="receitas-previstas" class="text-lg font-bold text-green-600">R$ 0,00</div>
+                    </div>
+                    <div class="card"><div class="small muted">Contas a Pagar (em aberto)</div><div id="contas-a-pagar" class="text-lg font-bold text-red-600">R$ 0,00</div></div>
+                    <div class="card"><div class="small muted">Previsão Líquida Futura</div><div id="previsao-futura" class="text-lg font-bold">R$ 0,00</div></div>
+                </div>
+            </section>
+
+            <section id="transacoes" class="card hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+                    <div class="flex gap-2 items-end w-full md:w-auto">
+                        <div><label class="small muted">Mês</label><input id="trans-month" type="month" /></div>
+                        <div><label class="small muted">Tipo</label><select id="trans-type"><option value="todos">Todos</option><option value="entrada">Receitas</option><option value="saida">Dívidas</option></select></div>
+                    </div>
+                    <div class="w-full md:w-auto"><label class="small muted">Buscar</label><input id="trans-search" placeholder="Pesquisar..." /></div>
+                    <div class="w-full md:w-auto flex items-end"><button id="btn-refresh" class="btn w-full">Atualizar</button></div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table style="min-width: 800px;">
+                        <thead><tr><th style="width: 100px;">Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th class="text-right">Valor</th><th>Status</th><th class="text-right" style="width: 160px;">Ações</th></tr></thead>
+                        <tbody id="trans-tbody"><tr><td colspan="7" class="text-center muted py-8">Carregando...</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="futuras" class="card hidden">
+                <div class="flex flex-col md:flex-row justify-between items-center mb-4 gap-2">
+                    <div class="flex gap-2 items-end w-full md:w-auto">
+                        <div><label class="small muted">Mês</label><input id="futuras-month" type="month" /></div>
+                        <div><label class="small muted">Tipo</label><select id="futuras-type"><option value="todos">Todos</option><option value="entrada">Receitas</option><option value="saida">Dívidas</option></select></div>
+                    </div>
+                    <div class="w-full md:w-auto"><label class="small muted">Buscar</label><input id="futuras-search" placeholder="Pesquisar conta..." /></div>
+                    <div class="w-full md:w-auto flex items-end"><button id="btn-refresh-fut" class="btn w-full">Atualizar</button></div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table style="min-width: 800px;">
+                        <thead><tr><th style="width: 100px;">Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th><th class="text-right">Valor</th><th class="text-center" style="width: 120px;">Ação</th></tr></thead>
+                        <tbody id="futuras-tbody"><tr><td colspan="6" class="text-center muted py-8">Sem dados</td></tr></tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="extrato" class="card hidden">
+                <div class="flex gap-4 items-end mb-4">
+                    <div><label class="small muted">Mês</label><input id="extrato-month" type="month" /></div>
+                    <div><button id="btn-generate-pdf" class="btn">Gerar PDF</button><button id="btn-generate-csv" class="btn secondary">Gerar CSV</button></div>
+                </div>
+                <div id="extrato-preview" class="card">
+                    <div class="small muted mb-2">Pré-visualização</div>
+                    <div id="extrato-list">Nenhum dado selecionado</div>
+                </div>
+            </section>
+        </main>
+        <div class="fab" id="fab-add" title="Adicionar">+</div>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+        <div class="bg-white p-6 rounded-lg w-full max-w-lg">
+            <h3 class="text-lg font-bold mb-2">Novo lançamento</h3>
+            <form id="form">
+                <input type="hidden" id="tx-id" />
+                <div class="grid grid-cols-1 gap-3">
+                    <input id="field-valor" required placeholder="Valor (ex: 150,50)" class="border p-2 rounded" />
+                    <select id="field-tipo" class="border p-2 rounded"><option value="entrada">Receita</option><option value="saida">Dívida</option></select>
+                    <input id="field-categoria" placeholder="Categoria" class="border p-2 rounded" />
+                    <input id="field-data" type="date" class="border p-2 rounded" required />
+                    <textarea id="field-desc" placeholder="Descrição" class="border p-2 rounded"></textarea>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label class="small muted">Status</label><select id="field-status" class="border p-2 rounded"><option value="pendente">Pendente</option><option value="efetivado" selected>Efetivado</option></select></div>
+                        <div><label class="small muted">Recorrência</label><select id="field-recurrence" class="border p-2 rounded"><option value="none">Não recorrente</option><option value="parcel">Parcelar</option><option value="fixed_monthly">Fixa mensal</option></select></div>
+                    </div>
+                    <div id="recurrence-details" class="hidden">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input id="recurrence-count" type="number" min="2" placeholder="Qtd" class="border p-2 rounded" />
+                            <select id="recurrence-interval" class="border p-2 rounded"><option value="monthly">Mensal</option><option value="weekly">Semanal</option></select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end gap-2 mt-4">
+                        <button type="button" id="btn-cancel" class="btn secondary">Cancelar</button>
+                        <button type="submit" id="btn-save" class="btn">Salvar</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+
+// CONFIG FIREBASE (SEUS DADOS)
+const firebaseConfig = {
+  apiKey: "AIzaSyC5aGRF1qU1rhfi7jHZywy5NNaPr6lJfvo",
+  authDomain: "controlefinanceirov1-c2b59.firebaseapp.com",
+  projectId: "controlefinanceirov1-c2b59",
+  storageBucket: "controlefinanceirov1-c2b59.firebasestorage.app",
+  messagingSenderId: "28738888590",
+  appId: "1:28738888590:web:ddfca08150f981fb163adf"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app);
+
+let currentUser = null;
+let transactions = [];
+
+// DOM Elements
+const appContent = document.getElementById('app-content');
+const loginForm = document.getElementById('login-form');
+const userInfo = document.getElementById('user-info');
+const userEmailDisplay = document.getElementById('user-email');
+const btnLogout = document.getElementById('btn-logout');
+const authMsg = document.getElementById('auth-msg');
+
+// AUTH
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        currentUser = user;
+        loginForm.classList.add('hidden');
+        userInfo.classList.remove('hidden');
+        btnLogout.classList.remove('hidden');
+        userEmailDisplay.textContent = user.email;
+        appContent.classList.remove('hidden');
+        initData();
+    } else {
+        currentUser = null;
+        loginForm.classList.remove('hidden');
+        userInfo.classList.add('hidden');
+        btnLogout.classList.add('hidden');
+        appContent.classList.add('hidden');
+    }
+});
+
+document.getElementById('btn-login').onclick = async () => { try { await signInWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); } catch (e) { authMsg.textContent = "Erro: " + e.message; } };
+document.getElementById('btn-signup').onclick = async () => { try { await createUserWithEmailAndPassword(auth, document.getElementById('email').value, document.getElementById('password').value); alert("Conta criada!"); } catch (e) { authMsg.textContent = "Erro: " + e.message; } };
+btnLogout.onclick = async () => { await signOut(auth); window.location.reload(); };
+
+// TABS
+const tabs = document.querySelectorAll('.tab-btn');
+const sections = { dashboard: document.getElementById('dashboard'), transacoes: document.getElementById('transacoes'), futuras: document.getElementById('futuras'), extrato: document.getElementById('extrato') };
+tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+        tabs.forEach(b => { b.classList.remove('active'); b.classList.add('secondary'); });
+        btn.classList.remove('secondary'); btn.classList.add('active');
+        Object.values(sections).forEach(s => s.classList.add('hidden'));
+        sections[btn.dataset.tab].classList.remove('hidden');
+    });
+});
+
+// DATA
+async function fetchTransactions() {
+    if(!currentUser) return;
+    const q = query(collection(db, "transactions"), where("user_id", "==", currentUser.uid));
+    const querySnapshot = await getDocs(q);
+    transactions = [];
+    querySnapshot.forEach((doc) => { transactions.push({ id: doc.id, ...doc.data() }); });
+    transactions.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return transactions;
+}
+
+// RENDER
+function applyColor(el, val, type) {
+    if(!el) return;
+    el.className = el.className.replace(/text-(green|red)-600/g, '');
+    if(type === 'entrada') el.classList.add('text-green-600');
+    else if(type === 'saida') el.classList.add('text-red-600');
+    else { if(val >= 0) el.classList.add('text-green-600'); else el.classList.add('text-red-600'); }
+}
+function fmt(v) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function formatDate(d) { if(!d) return ''; const p=d.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+
+function renderDashboard() {
+    const m = document.getElementById('dash-month').value;
+    const txs = transactions.filter(t => t.date.startsWith(m));
+    const rec = txs.filter(t=>t.type==='entrada' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
+    const desp = txs.filter(t=>t.type==='saida' && t.status==='efetivado').reduce((s,i)=>s+i.amount,0);
+    
+    const elRec = document.getElementById('total-receitas-mes'); elRec.textContent = fmt(rec); applyColor(elRec, rec, 'entrada');
+    const elDesp = document.getElementById('total-despesas-mes'); elDesp.textContent = fmt(desp); applyColor(elDesp, desp, 'saida');
+    const elSaldo = document.getElementById('saldo-mes'); elSaldo.textContent = fmt(rec - desp); applyColor(elSaldo, rec - desp);
+    
+    const prev = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
+    const elPrev = document.getElementById('receitas-previstas'); elPrev.textContent = fmt(prev); applyColor(elPrev, prev, 'entrada');
+    
+    const pagar = transactions.filter(t=>t.status==='pendente' && t.type==='saida').reduce((s,i)=>s+i.amount,0);
+    const elPagar = document.getElementById('contas-a-pagar'); elPagar.textContent = fmt(pagar); applyColor(elPagar, pagar, 'saida');
+
+    const receber = transactions.filter(t=>t.status==='pendente' && t.type==='entrada').reduce((s,i)=>s+i.amount,0);
+    const futura = receber - pagar;
+    const elFut = document.getElementById('previsao-futura'); elFut.textContent = fmt(futura); applyColor(elFut, futura);
+}
+
+function renderTable() {
+    const m = document.getElementById('trans-month').value;
+    const tipoFiltro = document.getElementById('trans-type').value;
+    const busca = (document.getElementById('trans-search').value || '').toLowerCase();
+    const tbody = document.getElementById('trans-tbody');
+    tbody.innerHTML = '';
+    
+    const txs = transactions.filter(t => {
+        const dataMes = t.date.startsWith(m);
+        const matchTipo = tipoFiltro === 'todos' ? true : t.type === tipoFiltro;
+        const texto = (t.description + ' ' + t.category).toLowerCase();
+        const matchBusca = texto.includes(busca);
+        return dataMes && matchTipo && matchBusca;
+    });
+    
+    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="7" class="text-center muted">Sem dados.</td></tr>'; return; }
+    
+    txs.forEach(t => {
+        const tr = document.createElement('tr');
+        const isRec = t.type === 'entrada';
+        const colorClass = isRec ? 'text-green-600' : 'text-red-600';
+        const sign = isRec ? '+' : '-';
+        tr.innerHTML = `<td>${formatDate(t.date)}</td><td class="truncate-text" title="${t.description}">${t.description}</td><td>${t.category}</td><td>${isRec?'Receita':'Dívida'}</td><td class="text-right font-bold ${colorClass}">${sign} ${fmt(t.amount)}</td><td>${t.status}</td><td class="text-right"><div class="flex justify-end gap-1"><button class="btn-table-edit" data-id="${t.id}">Editar</button><button class="btn-table-del" data-id="${t.id}">Excluir</button></div></td>`;
+        tbody.appendChild(tr);
+    });
+    document.querySelectorAll('.btn-table-del').forEach(b => b.onclick = () => deleteTx(b.dataset.id));
+    document.querySelectorAll('.btn-table-edit').forEach(b => b.onclick = () => openEdit(b.dataset.id));
+}
+
+document.getElementById('trans-type').addEventListener('change', renderTable);
+document.getElementById('trans-search').addEventListener('input', renderTable);
+document.getElementById('trans-month').addEventListener('change', renderTable);
+
+function renderFuturas(){
+    const m = document.getElementById('futuras-month').value;
+    const tipoFiltro = document.getElementById('futuras-type').value;
+    const busca = (document.getElementById('futuras-search').value || '').toLowerCase();
+    const tbody = document.getElementById('futuras-tbody');
+    tbody.innerHTML = '';
+    
+    const txs = transactions.filter(t => {
+        const isPendente = t.status === 'pendente';
+        const dataMes = t.date.startsWith(m);
+        const matchTipo = tipoFiltro === 'todos' ? true : t.type === tipoFiltro;
+        const texto = (t.description + ' ' + t.category).toLowerCase();
+        const matchBusca = texto.includes(busca);
+        return isPendente && dataMes && matchTipo && matchBusca;
+    });
+
+    if(txs.length === 0) { tbody.innerHTML = '<tr><td colspan="6" class="text-center muted">Sem pendências.</td></tr>'; return; }
+    
+    txs.forEach(t => {
+        const tr = document.createElement('tr');
+        const cssClass = t.type === 'entrada' ? 'text-green-600' : 'text-red-600';
+        tr.innerHTML = `<td>${formatDate(t.date)}</td><td class="truncate-text" title="${t.description}">${t.description}</td><td>${t.category}</td><td>${t.type === 'entrada' ? 'Receita' : 'Dívida'}</td><td class="text-right font-bold ${cssClass}">${fmt(t.amount)}</td><td class="text-center"><button class="btn-table-baixa" data-id="${t.id}">Baixar</button></td>`;
+        tbody.appendChild(tr);
+    });
+    document.querySelectorAll('.btn-table-baixa').forEach(b => b.onclick = async () => {
+        if(!confirm("Baixar?")) return;
+        await updateDoc(doc(db, "transactions", b.dataset.id), { status: 'efetivado' });
+        await fetchTransactions(); renderAll();
+    });
+}
+
+document.getElementById('futuras-type').addEventListener('change', renderFuturas);
+document.getElementById('futuras-search').addEventListener('input', renderFuturas);
+document.getElementById('futuras-month').addEventListener('change', renderFuturas);
+
+function renderExtratoPreview(){
+    const m = document.getElementById('extrato-month').value;
+    const list = document.getElementById('extrato-list');
+    const txs = transactions.filter(t => t.date.startsWith(m));
+    if(txs.length === 0) { list.innerHTML = 'Sem dados'; return; }
+    let h = '<table><thead><tr><th>Data</th><th>Desc</th><th>Valor</th><th>Status</th></tr></thead><tbody>';
+    txs.forEach(t=>{
+        const isRec = t.type === 'entrada';
+        const colorClass = isRec ? 'text-green-600' : 'text-red-600';
+        const sign = isRec ? '+' : '-';
+        h += `<tr><td>${formatDate(t.date)}</td><td>${t.description}</td><td class="text-right font-bold ${colorClass}">${sign} ${fmt(t.amount)}</td><td>${t.status}</td></tr>`;
+    });
+    h += '</tbody></table>';
+    list.innerHTML = h;
+}
+
+function renderAll() { renderDashboard(); renderTable(); renderFuturas(); renderExtratoPreview(); }
+
+// --- CRUD ---
+document.getElementById('form').onsubmit = async (e) => {
+    e.preventDefault();
+    if(!currentUser) return;
+    const id = document.getElementById('tx-id').value;
+    const valStr = document.getElementById('field-valor').value.replace(/\D/g,'');
+    const amount = valStr ? Number(valStr)/100 : 0;
+    const data = { user_id: currentUser.uid, amount: amount, type: document.getElementById('field-tipo').value, date: document.getElementById('field-data').value, category: document.getElementById('field-categoria').value, description: document.getElementById('field-desc').value, status: document.getElementById('field-status').value, recurrence: document.getElementById('field-recurrence').value };
+    try {
+        if(id) await updateDoc(doc(db, "transactions", id), data);
+        else await addDoc(collection(db, "transactions"), data);
+        document.getElementById('modal').classList.add('hidden');
+        await fetchTransactions(); renderAll();
+    } catch (e) { alert("Erro: " + e.message); }
+};
+
+async function deleteTx(id) {
+    if(!confirm("Apagar?")) return;
+    await deleteDoc(doc(db, "transactions", id));
+    await fetchTransactions(); renderAll();
+}
+
+function openEdit(id){
+    const t = transactions.find(x=>x.id===id);
+    if(!t) return;
+    document.getElementById('tx-id').value = id;
+    document.getElementById('field-valor').value = fmt(t.amount);
+    document.getElementById('field-tipo').value = t.type;
+    document.getElementById('field-data').value = t.date;
+    document.getElementById('field-desc').value = t.description;
+    document.getElementById('field-categoria').value = t.category;
+    document.getElementById('field-status').value = t.status;
+    document.getElementById('modal').classList.remove('hidden');
+}
+
+const fVal = document.getElementById('field-valor');
+fVal.addEventListener('input', (e)=>{ let v = e.target.value.replace(/\D/g,''); if(!v) return; e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); });
+
+const fieldRecurrence = document.getElementById('field-recurrence');
+const recurrenceDetails = document.getElementById('recurrence-details');
+fieldRecurrence.onchange = ()=>{ if(fieldRecurrence.value !== 'none') recurrenceDetails.classList.remove('hidden'); else recurrenceDetails.classList.add('hidden'); };
+
+document.getElementById('fab-add').onclick = () => { document.getElementById('form').reset(); document.getElementById('tx-id').value = ''; document.getElementById('field-data').value = new Date().toISOString().split('T')[0]; document.getElementById('modal').classList.remove('hidden'); };
+document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').classList.add('hidden');
+document.getElementById('btn-refresh').onclick = initData;
+document.getElementById('btn-refresh-all').onclick = initData;
+document.getElementById('btn-refresh-fut').onclick = initData;
+
+const ym = new Date().toISOString().slice(0,7);
+['dash-month','trans-month','futuras-month','extrato-month'].forEach(id => { const el = document.getElementById(id); if(el) { el.value = ym; el.onchange = renderAll; } });
+
+async function initData() { await fetchTransactions(); renderAll(); }
+
+</script>
+</body>
+</html>
