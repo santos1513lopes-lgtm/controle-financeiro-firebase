@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Controle Financeiro - Firebase v40</title>
+  <title>Controle Financeiro - Firebase v41</title>
   
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
@@ -41,7 +41,6 @@
         transition: transform 0.2s;
     }
     
-    /* TRUQUE: Esconde o botão APENAS no Mobile QUANDO estiver no Dashboard */
     @media (max-width: 768px) {
         body[data-active-tab="dashboard"] .fab {
             display: none !important;
@@ -56,6 +55,7 @@
     .btn { padding:8px 16px; border-radius:8px; background:#f59e0b; color:#fff; border:none; cursor:pointer; font-weight: 500; }
     .btn.secondary { background:#64748b; }
     .btn.danger { background:#ef4444; }
+    .btn.info { background:#3b82f6; } /* Nova classe para botão Info */
     .btn-theme-toggle { background: transparent; color: inherit; padding: 8px; border-radius: 50%; border: 1px solid currentColor; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; }
 
     .truncate-text { max-width: 140px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
@@ -112,10 +112,11 @@
                 <div class="text-xs text-center text-gray-400 mt-1">Acesso restrito.</div>
             </div>
         </div>
-        <div id="user-actions" class="hidden flex gap-2 w-full md:w-auto justify-end">
+        <div id="user-actions" class="hidden flex flex-wrap gap-2 w-full md:w-auto justify-end">
             <button id="btn-refresh-all" class="btn secondary text-xs flex-1 md:flex-none"><i class="fas fa-sync"></i> Atualizar</button>
+            <button id="btn-initial-balance" class="btn info text-xs flex-1 md:flex-none"><i class="fas fa-wallet"></i> Saldo Inicial</button>
             <button id="btn-wipe-data" class="btn danger text-xs flex-1 md:flex-none"><i class="fas fa-trash-alt"></i> Zerar</button>
-            <button id="btn-logout" class="btn secondary text-xs">Sair</button>
+            <button id="btn-logout" class="btn secondary text-xs flex-1 md:flex-none">Sair</button>
         </div>
       </div>
     </header>
@@ -222,6 +223,7 @@
                     <label class="text-xs text-gray-500 dark:text-gray-400">Categoria</label>
                     <select id="field-categoria" class="h-12 w-full border rounded font-medium">
                         <option disabled selected>Selecione...</option>
+                        <optgroup label="🌟 Especial"><option value="Saldo Inicial">💰 Saldo Inicial</option></optgroup>
                         <optgroup label="🏢 Empresa"><option value="Reposição de Estoque">📦 Reposição de Estoque</option><option value="Marketing">📢 Marketing / Anúncios</option><option value="Empréstimo">🏦 Empréstimo</option><option value="Pró-labore">💼 Pró-labore</option><option value="Impostos">💸 Impostos / MEI</option><option value="Logística">🚚 Frete / Logística</option><option value="Serviços">🛠️ Serviços Terceirizados</option><option value="Vendas">💰 Vendas / Serviços</option><option value="Poupança">🐷 Poupança / Reserva</option><option value="Investimento">📈 Investimento / Aportes</option></optgroup>
                         <optgroup label="🏠 Pessoal / Geral"><option value="Alimentação">🍔 Alimentação</option><option value="Transporte">🚗 Transporte</option><option value="Moradia">🏠 Moradia / Contas</option><option value="Saúde">💊 Saúde</option><option value="Lazer">🎉 Lazer</option><option value="Educação">📚 Educação</option><option value="Cartão de Crédito">💳 Cartão de Crédito</option><option value="Donativos">🤝 Donativos / Doações</option><option value="Poupança">🐷 Poupança</option><option value="Investimento">💰 Investimentos</option><option value="Outros">🔹 Outros</option></optgroup>
                     </select>
@@ -290,9 +292,7 @@ onAuthStateChanged(auth, (user) => {
         userEmailEl.textContent = user.email.split('@')[0];
         appContent.classList.remove('hidden');
         
-        // UPDATE DATA-ATTRIBUTE FOR CSS
         document.body.setAttribute('data-active-tab', 'dashboard'); 
-        
         initData();
     } else {
         currentUser = null;
@@ -321,11 +321,33 @@ document.getElementById('btn-wipe-data').onclick = async () => {
     } catch (e) { alert("Erro: " + e.message); }
 };
 
+// --- LÓGICA DO SALDO INICIAL ---
+document.getElementById('btn-initial-balance').onclick = async () => {
+    if (!currentUser) return;
+    const existeSaldo = transactions.find(t => t.category === 'Saldo Inicial');
+    
+    document.getElementById('form').reset();
+    document.getElementById('field-tipo').value = 'entrada';
+    document.getElementById('field-categoria').value = 'Saldo Inicial';
+    document.getElementById('field-desc').value = 'Saldo inicial de abertura';
+    document.getElementById('field-recurrence').value = 'none';
+    document.getElementById('field-status').value = 'efetivado';
+    
+    if (existeSaldo) {
+        // Se já existe, abre o modo de edição
+        window.editTx(existeSaldo.id);
+        alert("Você já possui um Saldo Inicial registrado. Pode editá-lo agora.");
+    } else {
+        // Se não existe, novo
+        document.getElementById('tx-id').value = '';
+        document.getElementById('field-data').value = new Date().toISOString().split('T')[0];
+        document.getElementById('modal').classList.remove('hidden');
+    }
+};
+
 const sections = { dashboard: document.getElementById('dashboard'), transacoes: document.getElementById('transacoes'), futuras: document.getElementById('futuras'), extrato: document.getElementById('extrato') };
 function switchTab(targetId) {
-    // Update Body Attribute for CSS Logic
     document.body.setAttribute('data-active-tab', targetId);
-    
     document.querySelectorAll('.tab-btn').forEach(b => { b.classList.remove('active'); b.classList.add('secondary'); if(b.dataset.tab === targetId) { b.classList.remove('secondary'); b.classList.add('active'); } });
     document.querySelectorAll('.nav-item').forEach(b => { b.classList.remove('active'); if(b.dataset.tab === targetId) b.classList.add('active'); });
     Object.values(sections).forEach(s => s.classList.add('hidden'));
@@ -480,7 +502,6 @@ document.getElementById('btn-generate-csv').onclick = () => {
     const a = document.createElement('a'); a.href = url; a.download = 'extrato.csv'; a.click();
 };
 
-// PARCELAMENTO
 function addInterval(dateStr, type, count) {
     const d = new Date(dateStr + 'T12:00:00');
     if (type === 'monthly') d.setMonth(d.getMonth() + count);
@@ -497,6 +518,16 @@ window.editTx = (id) => {
     document.getElementById('field-desc').value = t.description;
     document.getElementById('field-categoria').value = t.category;
     document.getElementById('field-status').value = t.status;
+    
+    // Ajuste para Saldo Inicial
+    if(t.category === 'Saldo Inicial') {
+        document.getElementById('field-tipo').disabled = true;
+        document.getElementById('field-categoria').disabled = true;
+    } else {
+        document.getElementById('field-tipo').disabled = false;
+        document.getElementById('field-categoria').disabled = false;
+    }
+
     document.getElementById('modal').classList.remove('hidden');
 };
 window.delTx = async (id) => { if(confirm("Apagar?")) { await deleteDoc(doc(db, "transactions", id)); await fetchTransactions(); renderAll(); } };
@@ -558,6 +589,10 @@ document.getElementById('form').onsubmit = async (e) => {
             }
         }
         document.getElementById('modal').classList.add('hidden');
+        // Resetar campos bloqueados caso tenha editado saldo inicial
+        document.getElementById('field-tipo').disabled = false;
+        document.getElementById('field-categoria').disabled = false;
+        
         await fetchTransactions(); 
         renderAll();
     } catch (e) { alert("Erro: " + e.message); }
@@ -568,7 +603,15 @@ const fVal = document.getElementById('field-valor');
 fVal.addEventListener('input', (e)=>{ let v = e.target.value.replace(/\D/g,''); if(!v) return; e.target.value = (parseInt(v)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); });
 const fieldRecurrence = document.getElementById('field-recurrence');
 fieldRecurrence.onchange = ()=>{ if(fieldRecurrence.value !== 'none') document.getElementById('recurrence-details').classList.remove('hidden'); else document.getElementById('recurrence-details').classList.add('hidden'); };
-document.getElementById('fab-add').onclick = () => { document.getElementById('form').reset(); document.getElementById('tx-id').value = ''; document.getElementById('field-data').value = new Date().toISOString().split('T')[0]; document.getElementById('modal').classList.remove('hidden'); };
+document.getElementById('fab-add').onclick = () => { 
+    document.getElementById('form').reset(); 
+    document.getElementById('tx-id').value = ''; 
+    // Resetar campos bloqueados
+    document.getElementById('field-tipo').disabled = false;
+    document.getElementById('field-categoria').disabled = false;
+    document.getElementById('field-data').value = new Date().toISOString().split('T')[0]; 
+    document.getElementById('modal').classList.remove('hidden'); 
+};
 document.getElementById('btn-cancel').onclick = () => document.getElementById('modal').classList.add('hidden');
 document.getElementById('btn-refresh-all').onclick = initData;
 
